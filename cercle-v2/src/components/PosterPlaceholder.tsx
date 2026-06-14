@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.14)',
   },
   label: {
-    fontFamily: Fonts.heading,
+    fontFamily: Fonts.semiBold,
     color: 'rgba(255,255,255,0.94)',
     letterSpacing: 0.3,
     lineHeight: 14,

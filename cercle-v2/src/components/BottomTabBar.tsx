@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Fonts } from '../theme';
-import { HomeIcon, SearchIcon, BookmarkIcon, ProfileIcon, PlusIcon } from './Icons';
+import { useTheme } from '../context/ThemeContext';
+import { Fonts } from '../theme';
+import { HomeIcon, ListIcon, ProfileIcon, PlusIcon } from './Icons';
 
-type Tab = 'fil' | 'chercher' | 'aVoir' | 'profil';
+export type Tab = 'fil' | 'liste' | 'profil';
 
 interface BottomTabBarProps {
   active?: Tab;
@@ -14,33 +16,31 @@ interface BottomTabBarProps {
 
 export function BottomTabBar({ active = 'fil', onTabPress, onAddPress }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
-  const color = (tab: Tab) => (active === tab ? Colors.terracotta : Colors.navInactive);
+  const iconColor = (tab: Tab) => (active === tab ? colors.accent : colors.muted);
 
   return (
-    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.nav, borderTopColor: colors.navBorder }]}>
       <TouchableOpacity style={styles.tab} onPress={() => onTabPress?.('fil')}>
-        <HomeIcon color={color('fil')} />
-        <Text style={[styles.label, active === 'fil' && styles.labelActive]}>Fil</Text>
+        <HomeIcon color={iconColor('fil')} />
+        <Text style={[styles.label, { color: active === 'fil' ? colors.accent : colors.muted }]}>Fil</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.tab} onPress={() => onTabPress?.('chercher')}>
-        <SearchIcon color={color('chercher')} />
-        <Text style={[styles.label, active === 'chercher' && styles.labelActive]}>Chercher</Text>
+      <TouchableOpacity style={styles.tab} onPress={() => onTabPress?.('liste')}>
+        <ListIcon color={iconColor('liste')} />
+        <Text style={[styles.label, { color: active === 'liste' ? colors.accent : colors.muted }]}>Liste</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.addBtn} onPress={onAddPress} activeOpacity={0.8}>
-        <PlusIcon color="#fff" />
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.tab} onPress={() => onTabPress?.('aVoir')}>
-        <BookmarkIcon color={color('aVoir')} />
-        <Text style={[styles.label, active === 'aVoir' && styles.labelActive]}>À voir</Text>
+      <TouchableOpacity onPress={onAddPress} activeOpacity={0.8}>
+        <LinearGradient colors={[colors.accent, colors.accentEnd]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.addBtn}>
+          <PlusIcon color={colors.onAccent} />
+        </LinearGradient>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.tab} onPress={() => onTabPress?.('profil')}>
-        <ProfileIcon color={color('profil')} />
-        <Text style={[styles.label, active === 'profil' && styles.labelActive]}>Profil</Text>
+        <ProfileIcon color={iconColor('profil')} />
+        <Text style={[styles.label, { color: active === 'profil' ? colors.accent : colors.muted }]}>Profil</Text>
       </TouchableOpacity>
     </View>
   );
@@ -52,36 +52,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-around',
     paddingTop: 12,
-    backgroundColor: Colors.navBg,
     borderTopWidth: 1,
-    borderTopColor: Colors.navBorder,
   },
-  tab: {
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-  },
-  label: {
-    fontFamily: Fonts.bodySemi,
-    fontSize: 10,
-    color: Colors.navInactive,
-  },
-  labelActive: {
-    fontFamily: Fonts.bodyBold,
-    color: Colors.terracotta,
-  },
+  tab: { alignItems: 'center', gap: 4, paddingHorizontal: 12 },
+  label: { fontFamily: Fonts.medium, fontSize: 10 },
   addBtn: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: Colors.terracotta,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: -6,
-    shadowColor: Colors.terracotta,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.42,
-    shadowRadius: 8,
+    shadowColor: '#F2B441',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
     elevation: 8,
   },
 });

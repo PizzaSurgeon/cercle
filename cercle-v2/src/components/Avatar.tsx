@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { Fonts } from '../theme';
 
 interface AvatarProps {
@@ -10,21 +10,9 @@ interface AvatarProps {
 }
 
 export function Avatar({ initial, bg, fg, size = 24 }: AvatarProps) {
-  const fontSize = size * 0.42;
   return (
-    <View style={[styles.circle, { width: size, height: size, borderRadius: size / 2, backgroundColor: bg }]}>
-      <Text style={[styles.initial, { color: fg, fontSize }]}>{initial}</Text>
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontFamily: Fonts.semiBold, color: fg, fontSize: size * 0.4 }}>{initial}</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  circle: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  initial: {
-    fontFamily: Fonts.bodyBold,
-    lineHeight: undefined,
-  },
-});

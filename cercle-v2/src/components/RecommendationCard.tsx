@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Fonts } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { Fonts } from '../theme';
 import { PosterPlaceholder } from './PosterPlaceholder';
 import { Avatar } from './Avatar';
 
@@ -15,101 +16,48 @@ interface RecommendationCardProps {
   recommenderAvatarFg: string;
 }
 
-export function RecommendationCard({
-  title,
-  posterLabel,
-  posterColors,
-  recommenderInitial,
-  recommenderName,
-  recommenderAvatarBg,
-  recommenderAvatarFg,
-}: RecommendationCardProps) {
+export function RecommendationCard({ title, posterLabel, posterColors, recommenderInitial, recommenderName, recommenderAvatarBg, recommenderAvatarFg }: RecommendationCardProps) {
+  const { colors } = useTheme();
+
   return (
-    <LinearGradient
-      colors={['#FBEAD9', '#F4D9BF']}
-      start={{ x: 0.1, y: 0 }}
-      end={{ x: 0.9, y: 1 }}
-      style={styles.card}
-    >
-      <PosterPlaceholder
-        label={posterLabel}
-        colors={posterColors}
-        width={62}
-        height={90}
-        borderRadius={12}
-        fontSize={8}
-      />
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+      <PosterPlaceholder label={posterLabel} colors={posterColors} width={62} height={90} borderRadius={11} fontSize={8} />
       <View style={styles.content}>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>RECOMMANDÉ POUR TOI</Text>
-        </View>
-        <Text style={styles.title}>{title}</Text>
+        <LinearGradient colors={[colors.accent, colors.accentEnd]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.badge}>
+          <Text style={[styles.badgeText, { color: colors.onAccent }]}>RECOMMANDÉ POUR TOI</Text>
+        </LinearGradient>
+        <Text style={[styles.title, { color: colors.ink }]}>{title}</Text>
         <View style={styles.recommenderRow}>
-          <Avatar
-            initial={recommenderInitial}
-            bg={recommenderAvatarBg}
-            fg={recommenderAvatarFg}
-            size={20}
-          />
-          <Text style={styles.recommenderText}>
-            <Text style={styles.recommenderName}>{recommenderName}</Text>
+          <Avatar initial={recommenderInitial} bg={recommenderAvatarBg} fg={recommenderAvatarFg} size={20} />
+          <Text style={[styles.recommenderText, { color: colors.chipText }]} numberOfLines={1}>
+            <Text style={[styles.recommenderName, { color: colors.chipText }]}>{recommenderName}</Text>
             {' pense que ça va te plaire'}
           </Text>
         </View>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 24,
+    borderRadius: 22,
+    borderWidth: 1,
     padding: 16,
     flexDirection: 'row',
     gap: 14,
     alignItems: 'center',
-    shadowColor: 'rgba(60,40,20,1)',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
-    shadowRadius: 15,
-    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 9 },
+    shadowOpacity: 0.45,
+    shadowRadius: 20,
+    elevation: 6,
   },
-  content: {
-    flex: 1,
-    minWidth: 0,
-  },
-  badge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: Colors.terracotta,
-  },
-  badgeText: {
-    fontFamily: Fonts.bodyBold,
-    fontSize: 10,
-    color: '#fff',
-    letterSpacing: 0.5,
-  },
-  title: {
-    fontFamily: Fonts.heading,
-    fontSize: 16,
-    color: Colors.ink,
-    marginTop: 8,
-  },
-  recommenderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    marginTop: 5,
-  },
-  recommenderText: {
-    fontFamily: Fonts.body,
-    fontSize: 12.5,
-    color: '#6E5A48',
-    flexShrink: 1,
-  },
-  recommenderName: {
-    fontFamily: Fonts.bodyBold,
-  },
+  content: { flex: 1, minWidth: 0 },
+  badge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
+  badgeText: { fontFamily: Fonts.semiBold, fontSize: 10, letterSpacing: 0.4 },
+  title: { fontFamily: Fonts.semiBold, fontSize: 16, marginTop: 8 },
+  recommenderRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 5 },
+  recommenderText: { fontFamily: Fonts.regular, fontSize: 12.5, flexShrink: 1 },
+  recommenderName: { fontFamily: Fonts.semiBold },
 });

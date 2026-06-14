@@ -1,44 +1,55 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
-import {
-  HankenGrotesk_400Regular,
-  HankenGrotesk_500Medium,
-  HankenGrotesk_600SemiBold,
-  HankenGrotesk_700Bold,
-  HankenGrotesk_800ExtraBold,
-} from '@expo-google-fonts/hanken-grotesk';
-import {
-  SchibstedGrotesk_700Bold,
-  SchibstedGrotesk_800ExtraBold,
-} from '@expo-google-fonts/schibsted-grotesk';
+import { Sora_400Regular, Sora_500Medium, Sora_600SemiBold, Sora_700Bold } from '@expo-google-fonts/sora';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { FeedScreen } from './src/screens/FeedScreen';
+import { WatchlistScreen } from './src/screens/WatchlistScreen';
+import { ProfileScreen } from './src/screens/ProfileScreen';
+import { BottomTabBar, Tab } from './src/components/BottomTabBar';
+
+function AppContent() {
+  const { colors, isDark } = useTheme();
+  const [activeTab, setActiveTab] = useState<Tab>('fil');
+
+  const renderScreen = () => {
+    if (activeTab === 'liste') return <WatchlistScreen />;
+    if (activeTab === 'profil') return <ProfileScreen />;
+    return <FeedScreen />;
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <View style={{ flex: 1 }}>{renderScreen()}</View>
+      <BottomTabBar active={activeTab} onTabPress={setActiveTab} onAddPress={() => {}} />
+    </View>
+  );
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    HankenGrotesk_400Regular,
-    HankenGrotesk_500Medium,
-    HankenGrotesk_600SemiBold,
-    HankenGrotesk_700Bold,
-    HankenGrotesk_800ExtraBold,
-    SchibstedGrotesk_700Bold,
-    SchibstedGrotesk_800ExtraBold,
+    Sora_400Regular,
+    Sora_500Medium,
+    Sora_600SemiBold,
+    Sora_700Bold,
   });
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F6EEE1' }}>
-        <ActivityIndicator color="#C65D3B" />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0B0D11' }}>
+        <ActivityIndicator color="#F2B441" />
       </View>
     );
   }
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="dark" />
-      <FeedScreen />
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

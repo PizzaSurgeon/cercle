@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Colors, Fonts } from '../theme';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../context/ThemeContext';
+import { Fonts } from '../theme';
 import { PosterPlaceholder } from './PosterPlaceholder';
 import { StarRating } from './StarRating';
 import { Avatar } from './Avatar';
@@ -11,7 +13,6 @@ export interface FriendReview {
   avatarBg: string;
   avatarFg: string;
   rating: number;
-  quote: string;
 }
 
 export interface ConsensusCardProps {
@@ -20,152 +21,86 @@ export interface ConsensusCardProps {
   posterLabel: string;
   posterColors: [string, string];
   circleAverage: number;
-  reviewCount: number;
   reviews: FriendReview[];
+  progress?: { label: string; pct: number; pctLabel: string };
+  onPress?: () => void;
 }
 
-export function ConsensusCard({
-  title,
-  subtitle,
-  posterLabel,
-  posterColors,
-  circleAverage,
-  reviewCount,
-  reviews,
-}: ConsensusCardProps) {
+export function ConsensusCard({ title, subtitle, posterLabel, posterColors, circleAverage, reviews, progress, onPress }: ConsensusCardProps) {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.card}>
-      {/* Header row: poster + title block */}
+    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
       <View style={styles.header}>
-        <PosterPlaceholder
-          label={posterLabel}
-          colors={posterColors}
-          width={92}
-          height={134}
-          borderRadius={14}
-          fontSize={11}
-        />
+        <PosterPlaceholder label={posterLabel} colors={posterColors} width={92} height={134} borderRadius={13} fontSize={11} />
         <View style={styles.titleBlock}>
-          <Text style={styles.title} numberOfLines={2}>{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+          <Text style={[styles.title, { color: colors.ink }]} numberOfLines={2}>{title}</Text>
+          <Text style={[styles.subtitle, { color: colors.muted2 }]}>{subtitle}</Text>
           <View style={styles.ratingRow}>
-            <Text style={styles.avgScore}>{circleAverage.toFixed(1).replace('.', ',')}</Text>
+            <Text style={[styles.avgScore, { color: colors.starFill }]}>
+              {circleAverage.toFixed(1).replace('.', ',')}
+            </Text>
             <StarRating value={circleAverage} size="lg" />
           </View>
-          <Text style={styles.avgLabel}>
-            Moyenne du cercle · {reviewCount} avis
-          </Text>
         </View>
       </View>
 
-      {/* Divider */}
-      <View style={styles.divider} />
+      {progress && (
+        <View style={styles.progressSection}>
+          <View style={styles.progressHeader}>
+            <Text style={[styles.progressLabel, { color: colors.muted2 }]}>{progress.label}</Text>
+            <Text style={[styles.progressPct, { color: colors.accent }]}>{progress.pctLabel}</Text>
+          </View>
+          <View style={[styles.track, { backgroundColor: colors.track }]}>
+            <LinearGradient
+              colors={[colors.accent, colors.accentEnd]}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={[styles.fill, { width: `${progress.pct}%` as `${number}%` }]}
+            />
+          </View>
+        </View>
+      )}
 
-      {/* Friend reviews */}
-      <Text style={styles.sectionLabel}>Les avis du cercle</Text>
+      <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+
       {reviews.map((r, i) => (
         <View key={i} style={styles.reviewRow}>
           <Avatar initial={r.initial} bg={r.avatarBg} fg={r.avatarFg} size={24} />
-          <Text style={styles.reviewName}>{r.name}</Text>
-          <StarRating value={r.rating} size="sm" />
-          <Text style={styles.reviewQuote} numberOfLines={1}>
-            « {r.quote} »
-          </Text>
+          <Text style={[styles.reviewName, { color: colors.ink2 }]}>{r.name}</Text>
+          <View style={{ marginLeft: 'auto' }}>
+            <StarRating value={r.rating} size="sm" />
+          </View>
         </View>
       ))}
-    </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.card,
-    borderRadius: 24,
+    borderRadius: 22,
+    borderWidth: 1,
     padding: 18,
     marginBottom: 16,
-    shadowColor: Colors.shadowColor,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
-    shadowRadius: 15,
-    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 9 },
+    shadowOpacity: 0.45,
+    shadowRadius: 20,
+    elevation: 8,
   },
-  header: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  titleBlock: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-  },
-  title: {
-    fontFamily: Fonts.heading,
-    fontSize: 19,
-    color: Colors.ink,
-    lineHeight: 22,
-  },
-  subtitle: {
-    fontFamily: Fonts.bodyMedium,
-    fontSize: 12,
-    color: Colors.subtleMuted,
-    marginTop: 3,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 9,
-    marginTop: 'auto',
-    paddingTop: 8,
-  },
-  avgScore: {
-    fontFamily: Fonts.headingBold,
-    fontSize: 34,
-    color: Colors.ink,
-    lineHeight: 32,
-  },
-  avgLabel: {
-    fontFamily: Fonts.bodyBold,
-    fontSize: 10,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    color: Colors.labelMuted,
-    marginTop: 4,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.divider,
-    marginVertical: 16,
-    marginBottom: 12,
-  },
-  sectionLabel: {
-    fontFamily: Fonts.bodyBold,
-    fontSize: 11,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    color: Colors.labelMuted,
-    marginBottom: 8,
-  },
-  reviewRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 5,
-  },
-  reviewName: {
-    fontFamily: Fonts.bodySemi,
-    fontSize: 13,
-    color: Colors.ink,
-    width: 62,
-    flexShrink: 0,
-  },
-  reviewQuote: {
-    marginLeft: 'auto',
-    fontFamily: Fonts.body,
-    fontSize: 12,
-    color: Colors.reviewText,
-    fontStyle: 'italic',
-    maxWidth: 120,
-    flexShrink: 1,
-  },
+  header: { flexDirection: 'row', gap: 16 },
+  titleBlock: { flex: 1, minWidth: 0, flexDirection: 'column' },
+  title: { fontFamily: Fonts.semiBold, fontSize: 19, lineHeight: 23 },
+  subtitle: { fontFamily: Fonts.regular, fontSize: 12, marginTop: 4 },
+  ratingRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 9, marginTop: 'auto', paddingTop: 8 },
+  avgScore: { fontFamily: Fonts.semiBold, fontSize: 34, lineHeight: 32 },
+  progressSection: { marginTop: 15 },
+  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 },
+  progressLabel: { fontFamily: Fonts.medium, fontSize: 11 },
+  progressPct: { fontFamily: Fonts.semiBold, fontSize: 11 },
+  track: { height: 6, borderRadius: 999, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 999 },
+  divider: { height: 1, marginTop: 16, marginBottom: 12 },
+  reviewRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 5 },
+  reviewName: { fontFamily: Fonts.regular, fontSize: 13 },
 });
