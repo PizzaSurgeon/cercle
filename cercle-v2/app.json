@@ -20,6 +20,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9a94c7ff-7fc8-492b-9096-81076d97fbc7"
+      }
+    },
+    "owner": "pizzasurgeon",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9a94c7ff-7fc8-492b-9096-81076d97fbc7"
     }
   }
 }
