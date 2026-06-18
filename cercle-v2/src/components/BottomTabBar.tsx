@@ -4,9 +4,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { Fonts } from '../theme';
-import { CercleIcon, ListIcon, ProfileIcon, PlusIcon } from './Icons';
+import { AmisIcon, CercleIcon, ListIcon, ProfileIcon, PlusIcon } from './Icons';
 
-export type Tab = 'cercle' | 'liste' | 'profil';
+export type Tab = 'amis' | 'cercle' | 'liste' | 'profil';
 
 interface BottomTabBarProps {
   active?: Tab;
@@ -22,20 +22,25 @@ export function BottomTabBar({ active = 'cercle', onTabPress, onAddPress }: Bott
 
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.nav, borderTopColor: colors.navBorder }]}>
+      <View style={styles.tab}>
+        <AmisIcon color={colors.muted} />
+        <Text style={[styles.label, { color: colors.muted }]}>Amis</Text>
+      </View>
+
       <TouchableOpacity style={styles.tab} onPress={() => onTabPress?.('cercle')}>
         <CercleIcon color={iconColor('cercle')} />
         <Text style={[styles.label, { color: active === 'cercle' ? colors.accent : colors.muted }]}>Cercle</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.tab} onPress={() => onTabPress?.('liste')}>
-        <ListIcon color={iconColor('liste')} />
-        <Text style={[styles.label, { color: active === 'liste' ? colors.accent : colors.muted }]}>Liste</Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={onAddPress} activeOpacity={0.8}>
         <LinearGradient colors={[colors.accent, colors.accentEnd]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.addBtn}>
           <PlusIcon color={colors.onAccent} />
         </LinearGradient>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.tab} onPress={() => onTabPress?.('liste')}>
+        <ListIcon color={iconColor('liste')} />
+        <Text style={[styles.label, { color: active === 'liste' ? colors.accent : colors.muted }]}>Liste</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.tab} onPress={() => onTabPress?.('profil')}>

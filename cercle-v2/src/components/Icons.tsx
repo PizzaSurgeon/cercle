@@ -83,6 +83,17 @@ export function SunIcon({ color, size = 17 }: IconProps) {
   );
 }
 
+export function AmisIcon({ color, size = 23 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={9} cy={8} r={3.2} stroke={color} strokeWidth={1.9} />
+      <Path d="M3.5 19c0-3 2.5-4.6 5.5-4.6s5.5 1.6 5.5 4.6" stroke={color} strokeWidth={1.9} strokeLinecap="round" />
+      <Circle cx={17} cy={8} r={2.6} stroke={color} strokeWidth={1.9} />
+      <Path d="M16 14.5c2.6.2 4.5 1.8 4.5 4.5" stroke={color} strokeWidth={1.9} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
 export function CercleIcon({ color, size = 23 }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
