@@ -14,7 +14,7 @@ jobs:
           node-version: 18
       - run: npm install --legacy-peer-deps
         working-directory: cercle-v2
-      - run: npm install -g eas-cli
+      - run: npm install -g eas-cli@latest
       - run: eas update --branch main --message "${{ github.event.head_commit.message }}" --non-interactive
         working-directory: cercle-v2
         env:
