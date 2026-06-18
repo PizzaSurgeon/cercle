@@ -6,18 +6,34 @@ import { Fonts } from '../theme';
 import { ConsensusCard } from '../components/ConsensusCard';
 import { RecommendationCard } from '../components/RecommendationCard';
 import { MoonIcon, SunIcon } from '../components/Icons';
+import { FilmDetailModal } from '../components/FilmDetailModal';
+import { UserProfileModal } from '../components/UserProfileModal';
+import { RatingModal } from '../components/RatingModal';
+import { FriendReview } from '../components/ConsensusCard';
 
 type FilterType = 'tout' | 'films' | 'séries' | 'animés';
 
-const CONSENSUS_DATA = [
+interface FilmData {
+  id: string;
+  title: string;
+  subtitle: string;
+  posterLabel: string;
+  posterColors: [string, string];
+  circleAverage: number;
+  type: FilterType;
+  reviews: FriendReview[];
+  progress?: { label: string; pct: number; pctLabel: string };
+}
+
+const CONSENSUS_DATA: FilmData[] = [
   {
     id: 'shogun',
     title: 'Shōgun',
     subtitle: 'Série · 2024 · Drame historique',
     posterLabel: 'SHŌGUN',
-    posterColors: ['#3E5C6B', '#1E2E38'] as [string, string],
+    posterColors: ['#3E5C6B', '#1E2E38'],
     circleAverage: 4.3,
-    type: 'séries' as FilterType,
+    type: 'séries',
     reviews: [
       { initial: 'C', name: 'Camille', avatarBg: '#D9A8B4', avatarFg: '#6B2E3E', rating: 5 },
       { initial: 'T', name: 'Tom', avatarBg: '#A9C0CE', avatarFg: '#2E4A57', rating: 4 },
@@ -29,9 +45,9 @@ const CONSENSUS_DATA = [
     title: 'Dune : Deuxième Partie',
     subtitle: 'Film · 2024 · Science-fiction',
     posterLabel: 'DUNE\nPARTIE 2',
-    posterColors: ['#D9925A', '#A24123'] as [string, string],
+    posterColors: ['#D9925A', '#A24123'],
     circleAverage: 4.7,
-    type: 'films' as FilterType,
+    type: 'films',
     reviews: [
       { initial: 'L', name: 'Léa', avatarBg: '#E5B98A', avatarFg: '#7A3B22', rating: 5 },
       { initial: 'M', name: 'Maxime', avatarBg: '#B8C8A8', avatarFg: '#42562E', rating: 5 },
@@ -43,9 +59,9 @@ const CONSENSUS_DATA = [
     title: 'Attack on Titan',
     subtitle: 'Animé · 2023 · Action',
     posterLabel: 'ATTACK\nON TITAN',
-    posterColors: ['#6B3E2E', '#3A1A12'] as [string, string],
+    posterColors: ['#6B3E2E', '#3A1A12'],
     circleAverage: 4.8,
-    type: 'animés' as FilterType,
+    type: 'animés',
     progress: { label: 'Épisode 12 / 28', pct: 43, pctLabel: '43%' },
     reviews: [
       { initial: 'S', name: 'Sofia', avatarBg: '#C7B79B', avatarFg: '#5A4A30', rating: 5 },
@@ -61,11 +77,40 @@ const FILTERS: { key: FilterType; label: string }[] = [
   { key: 'animés', label: 'Animés' },
 ];
 
+interface ReviewerState {
+  name: string;
+  initial: string;
+  avatarBg: string;
+  avatarFg: string;
+}
+
 export function FeedScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
   const [filter, setFilter] = useState<FilterType>('tout');
 
+  // Modal state
+  const [selectedFilm, setSelectedFilm] = useState<FilmData | null>(null);
+  const [selectedReviewer, setSelectedReviewer] = useState<ReviewerState | null>(null);
+  const [showRating, setShowRating] = useState(false);
+
   const visibleCards = CONSENSUS_DATA.filter(c => filter === 'tout' || c.type === filter);
+
+  const handleFilmPress = (film: FilmData) => {
+    setSelectedFilm(film);
+  };
+
+  const handleReviewerPress = (name: string, initial: string, avatarBg: string, avatarFg: string) => {
+    setSelectedReviewer({ name, initial, avatarBg, avatarFg });
+  };
+
+  const handleRatingPress = () => {
+    setShowRating(true);
+  };
+
+  const handleRatingSubmit = (rating: number, comment: string, platform: string, recommend: 'cercle' | 'amis' | 'none') => {
+    // No persistence for now — just close
+    setShowRating(false);
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -113,6 +158,8 @@ export function FeedScreen() {
             circleAverage={card.circleAverage}
             reviews={card.reviews}
             progress={card.progress}
+            onPress={() => handleFilmPress(card)}
+            onReviewerPress={handleReviewerPress}
           />
         ))}
 
@@ -129,6 +176,42 @@ export function FeedScreen() {
           />
         )}
       </ScrollView>
+
+      {/* Film Detail Modal */}
+      {selectedFilm && (
+        <FilmDetailModal
+          visible={!!selectedFilm}
+          title={selectedFilm.title}
+          subtitle={selectedFilm.subtitle}
+          posterLabel={selectedFilm.posterLabel}
+          posterColors={selectedFilm.posterColors}
+          circleAverage={selectedFilm.circleAverage}
+          reviews={selectedFilm.reviews}
+          onClose={() => setSelectedFilm(null)}
+          onReviewerPress={handleReviewerPress}
+          onRatingPress={handleRatingPress}
+        />
+      )}
+
+      {/* User Profile Modal */}
+      {selectedReviewer && (
+        <UserProfileModal
+          visible={!!selectedReviewer}
+          name={selectedReviewer.name}
+          initial={selectedReviewer.initial}
+          avatarBg={selectedReviewer.avatarBg}
+          avatarFg={selectedReviewer.avatarFg}
+          onClose={() => setSelectedReviewer(null)}
+        />
+      )}
+
+      {/* Rating Modal */}
+      <RatingModal
+        visible={showRating}
+        title={selectedFilm?.title ?? ''}
+        onClose={() => setShowRating(false)}
+        onSubmit={handleRatingSubmit}
+      />
     </View>
   );
 }

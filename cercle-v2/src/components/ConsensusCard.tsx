@@ -24,9 +24,10 @@ export interface ConsensusCardProps {
   reviews: FriendReview[];
   progress?: { label: string; pct: number; pctLabel: string };
   onPress?: () => void;
+  onReviewerPress?: (name: string, initial: string, avatarBg: string, avatarFg: string) => void;
 }
 
-export function ConsensusCard({ title, subtitle, posterLabel, posterColors, circleAverage, reviews, progress, onPress }: ConsensusCardProps) {
+export function ConsensusCard({ title, subtitle, posterLabel, posterColors, circleAverage, reviews, progress, onPress, onReviewerPress }: ConsensusCardProps) {
   const { colors } = useTheme();
 
   return (
@@ -65,8 +66,14 @@ export function ConsensusCard({ title, subtitle, posterLabel, posterColors, circ
 
       {reviews.map((r, i) => (
         <View key={i} style={styles.reviewRow}>
-          <Avatar initial={r.initial} bg={r.avatarBg} fg={r.avatarFg} size={24} />
-          <Text style={[styles.reviewName, { color: colors.ink2 }]}>{r.name}</Text>
+          <TouchableOpacity
+            onPress={() => onReviewerPress?.(r.name, r.initial, r.avatarBg, r.avatarFg)}
+            activeOpacity={0.7}
+            style={styles.reviewerTouchable}
+          >
+            <Avatar initial={r.initial} bg={r.avatarBg} fg={r.avatarFg} size={24} />
+            <Text style={[styles.reviewName, { color: colors.ink2 }]}>{r.name}</Text>
+          </TouchableOpacity>
           <View style={{ marginLeft: 'auto' }}>
             <StarRating value={r.rating} size="sm" />
           </View>
@@ -93,7 +100,7 @@ const styles = StyleSheet.create({
   title: { fontFamily: Fonts.semiBold, fontSize: 19, lineHeight: 23 },
   subtitle: { fontFamily: Fonts.regular, fontSize: 12, marginTop: 4 },
   ratingRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 9, marginTop: 'auto', paddingTop: 8 },
-  avgScore: { fontFamily: Fonts.semiBold, fontSize: 34, lineHeight: 32 },
+  avgScore: { fontFamily: Fonts.semiBold, fontSize: 34, lineHeight: 40 },
   progressSection: { marginTop: 15 },
   progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 },
   progressLabel: { fontFamily: Fonts.medium, fontSize: 11 },
@@ -102,5 +109,6 @@ const styles = StyleSheet.create({
   fill: { height: '100%', borderRadius: 999 },
   divider: { height: 1, marginTop: 16, marginBottom: 12 },
   reviewRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 5 },
+  reviewerTouchable: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   reviewName: { fontFamily: Fonts.regular, fontSize: 13 },
 });
