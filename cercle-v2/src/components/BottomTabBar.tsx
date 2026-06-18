@@ -4,9 +4,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { Fonts } from '../theme';
-import { HomeIcon, ListIcon, ProfileIcon, PlusIcon } from './Icons';
+import { CercleIcon, ListIcon, ProfileIcon, PlusIcon } from './Icons';
 
-export type Tab = 'fil' | 'liste' | 'profil';
+export type Tab = 'cercle' | 'liste' | 'profil';
 
 interface BottomTabBarProps {
   active?: Tab;
@@ -14,7 +14,7 @@ interface BottomTabBarProps {
   onAddPress?: () => void;
 }
 
-export function BottomTabBar({ active = 'fil', onTabPress, onAddPress }: BottomTabBarProps) {
+export function BottomTabBar({ active = 'cercle', onTabPress, onAddPress }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
 
@@ -22,9 +22,9 @@ export function BottomTabBar({ active = 'fil', onTabPress, onAddPress }: BottomT
 
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.nav, borderTopColor: colors.navBorder }]}>
-      <TouchableOpacity style={styles.tab} onPress={() => onTabPress?.('fil')}>
-        <HomeIcon color={iconColor('fil')} />
-        <Text style={[styles.label, { color: active === 'fil' ? colors.accent : colors.muted }]}>Fil</Text>
+      <TouchableOpacity style={styles.tab} onPress={() => onTabPress?.('cercle')}>
+        <CercleIcon color={iconColor('cercle')} />
+        <Text style={[styles.label, { color: active === 'cercle' ? colors.accent : colors.muted }]}>Cercle</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.tab} onPress={() => onTabPress?.('liste')}>

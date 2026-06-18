@@ -13,7 +13,7 @@ import { BottomTabBar, Tab } from './src/components/BottomTabBar';
 
 function AppContent() {
   const { colors, isDark } = useTheme();
-  const [activeTab, setActiveTab] = useState<Tab>('fil');
+  const [activeTab, setActiveTab] = useState<Tab>('cercle');
 
   const renderScreen = () => {
     if (activeTab === 'liste') return <WatchlistScreen />;
