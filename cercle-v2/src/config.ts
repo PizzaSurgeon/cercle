@@ -1,2 +1,1 @@
-// Remplacer par ta clé TMDB : themoviedb.org → Settings → API
-export const TMDB_API_KEY = 'VOTRE_CLE_TMDB';
+export const TMDB_API_KEY = 'a8c49defbd143f718839b40cecdb242b';
