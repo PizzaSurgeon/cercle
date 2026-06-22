@@ -15,6 +15,11 @@ import { Avatar } from './Avatar';
 import { StarRating } from './StarRating';
 import { PosterPlaceholder } from './PosterPlaceholder';
 import { FriendReview } from './ConsensusCard';
+import { MediaItem } from '../types/media';
+import { getPosterUrl } from '../services/tmdb';
+
+// getPosterUrl is imported for potential future use with real poster images
+void getPosterUrl;
 
 interface FilmDetailModalProps {
   visible: boolean;
@@ -27,6 +32,7 @@ interface FilmDetailModalProps {
   onClose: () => void;
   onReviewerPress: (name: string, initial: string, avatarBg: string, avatarFg: string) => void;
   onRatingPress: () => void;
+  mediaItem?: MediaItem;
 }
 
 interface MockComment {
@@ -76,6 +82,23 @@ function getCommentForReview(title: string, name: string): string {
   return 'Vraiment une belle découverte.';
 }
 
+function formatDuration(mediaItem: MediaItem): string | null {
+  if (mediaItem.type === 'movie' && mediaItem.duration) {
+    const h = Math.floor(mediaItem.duration / 60);
+    const m = mediaItem.duration % 60;
+    if (h > 0 && m > 0) return `${h}h ${m}min`;
+    if (h > 0) return `${h}h`;
+    return `${m}min`;
+  }
+  if ((mediaItem.type === 'tv' || mediaItem.type === 'anime')) {
+    const parts: string[] = [];
+    if (mediaItem.episodeCount) parts.push(`${mediaItem.episodeCount} ép.`);
+    if (mediaItem.seasonCount) parts.push(`${mediaItem.seasonCount} saison${mediaItem.seasonCount > 1 ? 's' : ''}`);
+    return parts.length > 0 ? parts.join(' · ') : null;
+  }
+  return null;
+}
+
 export function FilmDetailModal({
   visible,
   title,
@@ -87,9 +110,13 @@ export function FilmDetailModal({
   onClose,
   onReviewerPress,
   onRatingPress,
+  mediaItem,
 }: FilmDetailModalProps) {
   const { colors } = useTheme();
   const platform = getPlatformForTitle(title);
+  const durationLabel = mediaItem ? formatDuration(mediaItem) : null;
+  const realPlatform =
+    mediaItem && mediaItem.platforms.length > 0 ? mediaItem.platforms[0] : null;
 
   return (
     <Modal visible={visible} animationType="slide" statusBarTranslucent>
@@ -127,11 +154,25 @@ export function FilmDetailModal({
 
               {/* Platform badge */}
               <View style={[styles.platformBadge, { backgroundColor: colors.chip, borderColor: colors.chipBorder }]}>
-                <View style={[styles.platformDot, { backgroundColor: platform.color }]} />
-                <Text style={[styles.platformText, { color: colors.ink2 }]}>{platform.name}</Text>
+                <View style={[styles.platformDot, { backgroundColor: realPlatform ? '#1DB954' : platform.color }]} />
+                <Text style={[styles.platformText, { color: colors.ink2 }]}>
+                  {realPlatform ? realPlatform.name : platform.name}
+                </Text>
               </View>
+
+              {/* Duration */}
+              {durationLabel && (
+                <Text style={[styles.durationText, { color: colors.muted2 }]}>{durationLabel}</Text>
+              )}
             </View>
           </View>
+
+          {/* Synopsis */}
+          {mediaItem?.synopsis ? (
+            <View style={styles.synopsisBlock}>
+              <Text style={[styles.synopsisText, { color: colors.ink2 }]}>{mediaItem.synopsis}</Text>
+            </View>
+          ) : null}
 
           {/* Divider */}
           <View style={[styles.divider, { backgroundColor: colors.divider }]} />
@@ -268,6 +309,19 @@ const styles = StyleSheet.create({
   platformText: {
     fontFamily: Fonts.medium,
     fontSize: 12,
+  },
+  durationText: {
+    fontFamily: Fonts.regular,
+    fontSize: 12,
+    marginTop: 6,
+  },
+  synopsisBlock: {
+    marginBottom: 16,
+  },
+  synopsisText: {
+    fontFamily: Fonts.regular,
+    fontSize: 13.5,
+    lineHeight: 20,
   },
   divider: {
     height: 1,
