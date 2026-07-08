@@ -8,7 +8,6 @@ import { RecommendationCard } from '../components/RecommendationCard';
 import { MoonIcon, SunIcon } from '../components/Icons';
 import { FilmDetailModal } from '../components/FilmDetailModal';
 import { UserProfileModal } from '../components/UserProfileModal';
-import { RatingModal } from '../components/RatingModal';
 import { FriendReview } from '../components/ConsensusCard';
 import { getMediaDetails } from '../services/tmdb';
 import { MediaItem } from '../types/media';
@@ -92,7 +91,6 @@ export function FeedScreen() {
   // Modal state
   const [selectedFilm, setSelectedFilm] = useState<FilmData | null>(null);
   const [selectedReviewer, setSelectedReviewer] = useState<ReviewerState | null>(null);
-  const [showRating, setShowRating] = useState(false);
 
   useEffect(() => {
     async function fetchTmdbData() {
@@ -114,15 +112,6 @@ export function FeedScreen() {
 
   const handleReviewerPress = (name: string, initial: string, avatarBg: string, avatarFg: string) => {
     setSelectedReviewer({ name, initial, avatarBg, avatarFg });
-  };
-
-  const handleRatingPress = () => {
-    setShowRating(true);
-  };
-
-  const handleRatingSubmit = (rating: number, comment: string, platform: string, recommend: 'cercle' | 'amis' | 'none') => {
-    // No persistence for now — just close
-    setShowRating(false);
   };
 
   return (
@@ -202,7 +191,6 @@ export function FeedScreen() {
           reviews={selectedFilm.reviews}
           onClose={() => setSelectedFilm(null)}
           onReviewerPress={handleReviewerPress}
-          onRatingPress={handleRatingPress}
           mediaItem={tmdbData[selectedFilm.id] ?? undefined}
         />
       )}
@@ -219,13 +207,6 @@ export function FeedScreen() {
         />
       )}
 
-      {/* Rating Modal */}
-      <RatingModal
-        visible={showRating}
-        title={selectedFilm?.title ?? ''}
-        onClose={() => setShowRating(false)}
-        onSubmit={handleRatingSubmit}
-      />
     </View>
   );
 }

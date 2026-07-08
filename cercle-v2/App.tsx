@@ -11,11 +11,14 @@ import { WatchlistScreen } from './src/screens/WatchlistScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { BottomTabBar, Tab } from './src/components/BottomTabBar';
 import { SearchModal } from './src/components/SearchModal';
+import { RatingModal } from './src/components/RatingModal';
+import { TMDBSearchResult } from './src/types/media';
 
 function AppContent() {
   const { colors, isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<Tab>('cercle');
   const [showSearch, setShowSearch] = useState(false);
+  const [searchRating, setSearchRating] = useState<TMDBSearchResult | null>(null);
 
   const renderScreen = () => {
     if (activeTab === 'liste') return <WatchlistScreen />;
@@ -31,7 +34,13 @@ function AppContent() {
       <SearchModal
         visible={showSearch}
         onClose={() => setShowSearch(false)}
-        onSelectMedia={() => { setShowSearch(false); }}
+        onSelectMedia={item => { setShowSearch(false); setSearchRating(item); }}
+      />
+      <RatingModal
+        visible={!!searchRating}
+        title={searchRating?.title ?? searchRating?.name ?? ''}
+        onClose={() => setSearchRating(null)}
+        onSubmit={() => setSearchRating(null)}
       />
     </View>
   );

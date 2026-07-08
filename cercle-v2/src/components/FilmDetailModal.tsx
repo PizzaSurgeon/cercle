@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   View,
@@ -13,13 +13,10 @@ import { useTheme } from '../context/ThemeContext';
 import { Fonts } from '../theme';
 import { Avatar } from './Avatar';
 import { StarRating } from './StarRating';
-import { PosterPlaceholder } from './PosterPlaceholder';
+import { MediaPoster } from './MediaPoster';
+import { RatingModal } from './RatingModal';
 import { FriendReview } from './ConsensusCard';
 import { MediaItem } from '../types/media';
-import { getPosterUrl } from '../services/tmdb';
-
-// getPosterUrl is imported for potential future use with real poster images
-void getPosterUrl;
 
 interface FilmDetailModalProps {
   visible: boolean;
@@ -31,7 +28,6 @@ interface FilmDetailModalProps {
   reviews: FriendReview[];
   onClose: () => void;
   onReviewerPress: (name: string, initial: string, avatarBg: string, avatarFg: string) => void;
-  onRatingPress: () => void;
   mediaItem?: MediaItem;
 }
 
@@ -90,7 +86,7 @@ function formatDuration(mediaItem: MediaItem): string | null {
     if (h > 0) return `${h}h`;
     return `${m}min`;
   }
-  if ((mediaItem.type === 'tv' || mediaItem.type === 'anime')) {
+  if (mediaItem.type === 'tv' || mediaItem.type === 'anime') {
     const parts: string[] = [];
     if (mediaItem.episodeCount) parts.push(`${mediaItem.episodeCount} ép.`);
     if (mediaItem.seasonCount) parts.push(`${mediaItem.seasonCount} saison${mediaItem.seasonCount > 1 ? 's' : ''}`);
@@ -109,116 +105,129 @@ export function FilmDetailModal({
   reviews,
   onClose,
   onReviewerPress,
-  onRatingPress,
   mediaItem,
 }: FilmDetailModalProps) {
   const { colors } = useTheme();
+  const [showRating, setShowRating] = useState(false);
+
   const platform = getPlatformForTitle(title);
   const durationLabel = mediaItem ? formatDuration(mediaItem) : null;
-  const realPlatform =
-    mediaItem && mediaItem.platforms.length > 0 ? mediaItem.platforms[0] : null;
+  const realPlatform = mediaItem && mediaItem.platforms.length > 0 ? mediaItem.platforms[0] : null;
+  const posterPath = mediaItem?.posterPath ?? null;
 
   return (
-    <Modal visible={visible} animationType="slide" statusBarTranslucent>
-      <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]}>
-        {/* Navbar */}
-        <View style={[styles.navbar, { borderBottomColor: colors.divider }]}>
-          <View style={styles.navSpacer} />
-          <Text style={[styles.navTitle, { color: colors.ink }]}>Détails</Text>
-          <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { backgroundColor: colors.chip, borderColor: colors.cardBorder }]} activeOpacity={0.7}>
-            <Text style={[styles.closeBtnText, { color: colors.muted }]}>×</Text>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Poster + info block */}
-          <View style={styles.heroSection}>
-            <PosterPlaceholder
-              label={posterLabel}
-              colors={posterColors}
-              width={120}
-              height={174}
-              borderRadius={16}
-              fontSize={12}
-            />
-            <View style={styles.heroInfo}>
-              <Text style={[styles.heroTitle, { color: colors.ink }]} numberOfLines={3}>{title}</Text>
-              <Text style={[styles.heroSubtitle, { color: colors.muted2 }]}>{subtitle}</Text>
-
-              <View style={styles.scoreRow}>
-                <Text style={[styles.avgScore, { color: colors.starFill }]}>
-                  {circleAverage.toFixed(1).replace('.', ',')}
-                </Text>
-                <StarRating value={circleAverage} size="md" />
-              </View>
-
-              {/* Platform badge */}
-              <View style={[styles.platformBadge, { backgroundColor: colors.chip, borderColor: colors.chipBorder }]}>
-                <View style={[styles.platformDot, { backgroundColor: realPlatform ? '#1DB954' : platform.color }]} />
-                <Text style={[styles.platformText, { color: colors.ink2 }]}>
-                  {realPlatform ? realPlatform.name : platform.name}
-                </Text>
-              </View>
-
-              {/* Duration */}
-              {durationLabel && (
-                <Text style={[styles.durationText, { color: colors.muted2 }]}>{durationLabel}</Text>
-              )}
-            </View>
+    <>
+      <Modal visible={visible} animationType="slide" statusBarTranslucent>
+        <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]}>
+          {/* Navbar */}
+          <View style={[styles.navbar, { borderBottomColor: colors.divider }]}>
+            <View style={styles.navSpacer} />
+            <Text style={[styles.navTitle, { color: colors.ink }]}>Détails</Text>
+            <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { backgroundColor: colors.chip, borderColor: colors.cardBorder }]} activeOpacity={0.7}>
+              <Text style={[styles.closeBtnText, { color: colors.muted }]}>×</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Synopsis */}
-          {mediaItem?.synopsis ? (
-            <View style={styles.synopsisBlock}>
-              <Text style={[styles.synopsisText, { color: colors.ink2 }]}>{mediaItem.synopsis}</Text>
-            </View>
-          ) : null}
+          <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            {/* Poster + info block */}
+            <View style={styles.heroSection}>
+              <MediaPoster
+                posterPath={posterPath}
+                fallbackLabel={posterLabel}
+                fallbackColors={posterColors}
+                width={120}
+                height={174}
+                borderRadius={16}
+                fontSize={12}
+              />
+              <View style={styles.heroInfo}>
+                <Text style={[styles.heroTitle, { color: colors.ink }]} numberOfLines={3}>{title}</Text>
+                <Text style={[styles.heroSubtitle, { color: colors.muted2 }]}>{subtitle}</Text>
 
-          {/* Divider */}
-          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+                <View style={styles.scoreRow}>
+                  <Text style={[styles.avgScore, { color: colors.starFill }]}>
+                    {circleAverage.toFixed(1).replace('.', ',')}
+                  </Text>
+                  <StarRating value={circleAverage} size="md" />
+                </View>
 
-          {/* Reviews section */}
-          <Text style={[styles.sectionTitle, { color: colors.ink }]}>Avis du cercle</Text>
+                {/* Platform badge */}
+                <View style={[styles.platformBadge, { backgroundColor: colors.chip, borderColor: colors.chipBorder }]}>
+                  <View style={[styles.platformDot, { backgroundColor: realPlatform ? '#1DB954' : platform.color }]} />
+                  <Text style={[styles.platformText, { color: colors.ink2 }]}>
+                    {realPlatform ? realPlatform.name : platform.name}
+                  </Text>
+                </View>
 
-          {reviews.map((r, i) => (
-            <View key={i} style={[styles.reviewCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-              <View style={styles.reviewHeader}>
-                <TouchableOpacity
-                  onPress={() => onReviewerPress(r.name, r.initial, r.avatarBg, r.avatarFg)}
-                  style={styles.reviewerRow}
-                  activeOpacity={0.7}
-                >
-                  <Avatar initial={r.initial} bg={r.avatarBg} fg={r.avatarFg} size={32} />
-                  <Text style={[styles.reviewerName, { color: colors.ink }]}>{r.name}</Text>
-                </TouchableOpacity>
-                <StarRating value={r.rating} size="sm" />
+                {/* Duration */}
+                {durationLabel && (
+                  <Text style={[styles.durationText, { color: colors.muted2 }]}>{durationLabel}</Text>
+                )}
               </View>
-              <Text style={[styles.reviewComment, { color: colors.muted2 }]}>
-                {getCommentForReview(title, r.name)}
-              </Text>
             </View>
-          ))}
 
-          <View style={{ height: 100 }} />
-        </ScrollView>
+            {/* Synopsis */}
+            {mediaItem?.synopsis ? (
+              <View style={styles.synopsisBlock}>
+                <Text style={[styles.synopsisText, { color: colors.ink2 }]}>{mediaItem.synopsis}</Text>
+              </View>
+            ) : null}
 
-        {/* Rate button */}
-        <View style={[styles.rateButtonContainer, { borderTopColor: colors.divider }]}>
-          <TouchableOpacity onPress={onRatingPress} activeOpacity={0.85} style={styles.rateButtonTouchable}>
-            <LinearGradient
-              colors={[colors.accent, colors.accentEnd]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.rateButton}
-            >
-              <Text style={[styles.rateButtonText, { color: colors.onAccent }]}>
-                ★  Noter ce titre
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    </Modal>
+            {/* Divider */}
+            <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+
+            {/* Reviews section */}
+            {reviews.length > 0 && (
+              <Text style={[styles.sectionTitle, { color: colors.ink }]}>Avis du cercle</Text>
+            )}
+
+            {reviews.map((r, i) => (
+              <View key={i} style={[styles.reviewCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+                <View style={styles.reviewHeader}>
+                  <TouchableOpacity
+                    onPress={() => onReviewerPress(r.name, r.initial, r.avatarBg, r.avatarFg)}
+                    style={styles.reviewerRow}
+                    activeOpacity={0.7}
+                  >
+                    <Avatar initial={r.initial} bg={r.avatarBg} fg={r.avatarFg} size={32} />
+                    <Text style={[styles.reviewerName, { color: colors.ink }]}>{r.name}</Text>
+                  </TouchableOpacity>
+                  <StarRating value={r.rating} size="sm" />
+                </View>
+                <Text style={[styles.reviewComment, { color: colors.muted2 }]}>
+                  {getCommentForReview(title, r.name)}
+                </Text>
+              </View>
+            ))}
+
+            <View style={{ height: 100 }} />
+          </ScrollView>
+
+          {/* Rate button */}
+          <View style={[styles.rateButtonContainer, { backgroundColor: colors.background, borderTopColor: colors.divider }]}>
+            <TouchableOpacity onPress={() => setShowRating(true)} activeOpacity={0.85} style={styles.rateButtonTouchable}>
+              <LinearGradient
+                colors={[colors.accent, colors.accentEnd]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.rateButton}
+              >
+                <Text style={[styles.rateButtonText, { color: colors.onAccent }]}>
+                  ★  Noter ce titre
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      <RatingModal
+        visible={showRating}
+        title={title}
+        onClose={() => setShowRating(false)}
+        onSubmit={() => setShowRating(false)}
+      />
+    </>
   );
 }
 
@@ -282,7 +291,7 @@ const styles = StyleSheet.create({
   },
   scoreRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     gap: 8,
     marginBottom: 12,
   },
@@ -359,10 +368,6 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   rateButtonContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     paddingHorizontal: 18,
     paddingVertical: 16,
     paddingBottom: 28,

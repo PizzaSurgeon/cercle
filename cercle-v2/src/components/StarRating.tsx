@@ -8,20 +8,30 @@ interface StarRatingProps {
 }
 
 const SIZES = { sm: 11, md: 13, lg: 15 } as const;
-const SPACINGS = { sm: 1.5, md: 2, lg: 2.5 } as const;
+const GAPS = { sm: 1.5, md: 2, lg: 2.5 } as const;
 
 export function StarRating({ value, size = 'md' }: StarRatingProps) {
   const { colors } = useTheme();
   const fontSize = SIZES[size];
-  const letterSpacing = SPACINGS[size];
-  const pct = `${Math.round((value / 5) * 100)}%` as `${number}%`;
+  const lineHeight = Math.ceil(fontSize * 1.35);
+  const gap = GAPS[size];
 
   return (
-    <View style={{ position: 'relative' }}>
-      <Text style={{ fontSize, letterSpacing, color: colors.starEmpty }}>{'★★★★★'}</Text>
-      <View style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: pct, overflow: 'hidden' }}>
-        <Text style={{ fontSize, letterSpacing, color: colors.starFill }}>{'★★★★★'}</Text>
-      </View>
+    <View style={{ flexDirection: 'row', gap }}>
+      {([1, 2, 3, 4, 5] as const).map(i => {
+        const fillRatio = Math.min(Math.max(value - (i - 1), 0), 1);
+        const fillPct = `${Math.round(fillRatio * 100)}%` as `${number}%`;
+        return (
+          <View key={i} style={{ position: 'relative' }}>
+            <Text style={{ fontSize, lineHeight, color: colors.starEmpty }}>★</Text>
+            {fillRatio > 0 && (
+              <View style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: fillPct, overflow: 'hidden' }}>
+                <Text style={{ fontSize, lineHeight, color: colors.starFill }}>★</Text>
+              </View>
+            )}
+          </View>
+        );
+      })}
     </View>
   );
 }
