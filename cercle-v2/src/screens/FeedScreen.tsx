@@ -24,7 +24,6 @@ interface FilmData {
   circleAverage: number;
   type: FilterType;
   reviews: FriendReview[];
-  progress?: { label: string; pct: number; pctLabel: string };
 }
 
 const CONSENSUS_DATA: FilmData[] = [
@@ -64,7 +63,6 @@ const CONSENSUS_DATA: FilmData[] = [
     posterColors: ['#6B3E2E', '#3A1A12'],
     circleAverage: 4.8,
     type: 'animés',
-    progress: { label: 'Épisode 12 / 28', pct: 43, pctLabel: '43%' },
     reviews: [
       { initial: 'S', name: 'Sofia', avatarBg: '#C7B79B', avatarFg: '#5A4A30', rating: 5 },
       { initial: 'L', name: 'Léa', avatarBg: '#E5B98A', avatarFg: '#7A3B22', rating: 4.5 },
@@ -173,7 +171,6 @@ export function FeedScreen() {
             posterPath={tmdbData[card.id]?.posterPath ?? null}
             circleAverage={card.circleAverage}
             reviews={card.reviews}
-            progress={card.progress}
             onPress={() => handleFilmPress(card)}
             onReviewerPress={handleReviewerPress}
           />

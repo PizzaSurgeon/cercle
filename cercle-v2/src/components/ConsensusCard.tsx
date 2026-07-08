@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { Fonts } from '../theme';
 import { MediaPoster } from './MediaPoster';
@@ -23,12 +22,11 @@ export interface ConsensusCardProps {
   posterPath?: string | null;
   circleAverage: number;
   reviews: FriendReview[];
-  progress?: { label: string; pct: number; pctLabel: string };
   onPress?: () => void;
   onReviewerPress?: (name: string, initial: string, avatarBg: string, avatarFg: string) => void;
 }
 
-export function ConsensusCard({ title, subtitle, posterLabel, posterColors, posterPath, circleAverage, reviews, progress, onPress, onReviewerPress }: ConsensusCardProps) {
+export function ConsensusCard({ title, subtitle, posterLabel, posterColors, posterPath, circleAverage, reviews, onPress, onReviewerPress }: ConsensusCardProps) {
   const { colors } = useTheme();
 
   return (
@@ -54,22 +52,6 @@ export function ConsensusCard({ title, subtitle, posterLabel, posterColors, post
           </View>
         </View>
       </View>
-
-      {progress && (
-        <View style={styles.progressSection}>
-          <View style={styles.progressHeader}>
-            <Text style={[styles.progressLabel, { color: colors.muted2 }]}>{progress.label}</Text>
-            <Text style={[styles.progressPct, { color: colors.accent }]}>{progress.pctLabel}</Text>
-          </View>
-          <View style={[styles.track, { backgroundColor: colors.track }]}>
-            <LinearGradient
-              colors={[colors.accent, colors.accentEnd]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={[styles.fill, { width: `${progress.pct}%` as `${number}%` }]}
-            />
-          </View>
-        </View>
-      )}
 
       <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
@@ -110,12 +92,6 @@ const styles = StyleSheet.create({
   subtitle: { fontFamily: Fonts.regular, fontSize: 12, marginTop: 4 },
   ratingRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 9, marginTop: 'auto', paddingTop: 8 },
   avgScore: { fontFamily: Fonts.semiBold, fontSize: 34, lineHeight: 40 },
-  progressSection: { marginTop: 15 },
-  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 },
-  progressLabel: { fontFamily: Fonts.medium, fontSize: 11 },
-  progressPct: { fontFamily: Fonts.semiBold, fontSize: 11 },
-  track: { height: 6, borderRadius: 999, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 999 },
   divider: { height: 1, marginTop: 16, marginBottom: 12 },
   reviewRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 5 },
   reviewerTouchable: { flexDirection: 'row', alignItems: 'center', gap: 10 },

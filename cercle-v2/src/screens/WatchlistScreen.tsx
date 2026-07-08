@@ -1,43 +1,87 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Fonts } from '../theme';
-import { PosterPlaceholder } from '../components/PosterPlaceholder';
+import { MediaPoster } from '../components/MediaPoster';
 import { Avatar } from '../components/Avatar';
+import { getMediaDetails } from '../services/tmdb';
 
-const TO_WATCH = [
-  { id: '1', title: 'Frieren', meta: 'Animé · 2023', label: 'FRIEREN', colors: ['#9FB07A', '#5E7048'] as [string, string] },
-  { id: '2', title: 'Poor Things', meta: 'Film · 2023', label: 'POOR\nTHINGS', colors: ['#E0B24C', '#B07A1E'] as [string, string] },
-  { id: '3', title: 'The Bear', meta: 'Série · 2024', label: 'THE\nBEAR', colors: ['#C85A3C', '#7E2A1C'] as [string, string] },
+type MediaType = 'movie' | 'tv';
+
+interface ListItem {
+  id: string;
+  tmdbId: number;
+  tmdbType: MediaType;
+  title: string;
+  meta: string;
+  label: string;
+  colors: [string, string];
+}
+
+interface WatchedItem extends ListItem {
+  rating: string;
+}
+
+interface RecommendedItem extends ListItem {
+  byInitial: string;
+  by: string;
+  byBg: string;
+  byFg: string;
+}
+
+const TO_WATCH: ListItem[] = [
+  { id: '1', tmdbId: 209867, tmdbType: 'tv',    title: 'Frieren',        meta: 'Animé · 2023',  label: 'FRIEREN',       colors: ['#9FB07A', '#5E7048'] },
+  { id: '2', tmdbId: 792307, tmdbType: 'movie', title: 'Poor Things',    meta: 'Film · 2023',   label: 'POOR\nTHINGS',  colors: ['#E0B24C', '#B07A1E'] },
+  { id: '3', tmdbId: 136315, tmdbType: 'tv',    title: 'The Bear',       meta: 'Série · 2024',  label: 'THE\nBEAR',     colors: ['#C85A3C', '#7E2A1C'] },
 ];
 
-const WATCHED = [
-  { id: '1', title: 'Shōgun', meta: 'Série · 2024', label: 'SHŌGUN', colors: ['#3E5C6B', '#1E2E38'] as [string, string], rating: '4,3' },
-  { id: '2', title: 'Dune : Deuxième Partie', meta: 'Film · 2024', label: 'DUNE 2', colors: ['#D9925A', '#A24123'] as [string, string], rating: '4,7' },
-  { id: '3', title: 'Past Lives', meta: 'Film · 2023', label: 'PAST\nLIVES', colors: ['#8FA0B8', '#4E5E78'] as [string, string], rating: '4,5' },
-  { id: '4', title: 'Attack on Titan', meta: 'Animé · 2023', label: 'AOT', colors: ['#6B3E2E', '#3A1A12'] as [string, string], rating: '4,8' },
+const WATCHED: WatchedItem[] = [
+  { id: '1', tmdbId: 126308, tmdbType: 'tv',    title: 'Shōgun',                  meta: 'Série · 2024', label: 'SHŌGUN',     colors: ['#3E5C6B', '#1E2E38'], rating: '4,3' },
+  { id: '2', tmdbId: 693134, tmdbType: 'movie', title: 'Dune : Deuxième Partie',  meta: 'Film · 2024',  label: 'DUNE 2',     colors: ['#D9925A', '#A24123'], rating: '4,7' },
+  { id: '3', tmdbId: 877269, tmdbType: 'movie', title: 'Past Lives',              meta: 'Film · 2023',  label: 'PAST\nLIVES',colors: ['#8FA0B8', '#4E5E78'], rating: '4,5' },
+  { id: '4', tmdbId: 1429,   tmdbType: 'tv',    title: 'Attack on Titan',         meta: 'Animé · 2023', label: 'AOT',        colors: ['#6B3E2E', '#3A1A12'], rating: '4,8' },
 ];
 
-const RECOMMENDED = [
-  { id: '1', title: 'Jujutsu Kaisen', meta: 'Animé · 2023', label: 'JJK', colors: ['#6B5B8A', '#2E2740'] as [string, string], byInitial: 'S', by: 'Sofia', byBg: '#C7B79B', byFg: '#5A4A30' },
-  { id: '2', title: 'Oppenheimer', meta: 'Film · 2023', label: 'OPPEN', colors: ['#4A3828', '#1E1510'] as [string, string], byInitial: 'T', by: 'Tom', byBg: '#A9C0CE', byFg: '#2E4A57' },
-  { id: '3', title: 'The Last of Us', meta: 'Série · 2023', label: 'TLOU', colors: ['#4A6B3A', '#2A3E20'] as [string, string], byInitial: 'L', by: 'Léa', byBg: '#E5B98A', byFg: '#7A3B22' },
+const RECOMMENDED: RecommendedItem[] = [
+  { id: '1', tmdbId: 95479,  tmdbType: 'tv',    title: 'Jujutsu Kaisen',  meta: 'Animé · 2023', label: 'JJK',   colors: ['#6B5B8A', '#2E2740'], byInitial: 'S', by: 'Sofia', byBg: '#C7B79B', byFg: '#5A4A30' },
+  { id: '2', tmdbId: 872585, tmdbType: 'movie', title: 'Oppenheimer',     meta: 'Film · 2023',  label: 'OPPEN', colors: ['#4A3828', '#1E1510'], byInitial: 'T', by: 'Tom',   byBg: '#A9C0CE', byFg: '#2E4A57' },
+  { id: '3', tmdbId: 100088, tmdbType: 'tv',    title: 'The Last of Us',  meta: 'Série · 2023', label: 'TLOU',  colors: ['#4A6B3A', '#2A3E20'], byInitial: 'L', by: 'Léa',  byBg: '#E5B98A', byFg: '#7A3B22' },
 ];
+
+const ALL_ITEMS: ListItem[] = [...TO_WATCH, ...WATCHED, ...RECOMMENDED];
 
 export function WatchlistScreen() {
   const { colors } = useTheme();
+  const [posters, setPosters] = useState<Record<string, string | null>>({});
+
+  useEffect(() => {
+    async function fetchPosters() {
+      const results = await Promise.all(
+        ALL_ITEMS.map(item =>
+          getMediaDetails(item.tmdbId, item.tmdbType)
+            .then(data => ({ key: `${item.tmdbType}-${item.tmdbId}`, path: data?.posterPath ?? null }))
+            .catch(() => ({ key: `${item.tmdbType}-${item.tmdbId}`, path: null }))
+        )
+      );
+      const map: Record<string, string | null> = {};
+      results.forEach(r => { map[r.key] = r.path; });
+      setPosters(map);
+    }
+    fetchPosters();
+  }, []);
+
+  const posterPath = (item: ListItem) => posters[`${item.tmdbType}-${item.tmdbId}`] ?? null;
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[styles.pageTitle, { color: colors.ink }]}>Ma liste</Text>
 
-        {/* À voir */}
         <SectionHeader title="À voir" count={TO_WATCH.length} colors={colors} />
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           {TO_WATCH.map((item, i) => (
             <View key={item.id} style={[styles.row, i < TO_WATCH.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider }]}>
-              <PosterPlaceholder label={item.label} colors={item.colors} width={46} height={66} borderRadius={9} fontSize={7} />
+              <MediaPoster posterPath={posterPath(item)} fallbackLabel={item.label} fallbackColors={item.colors} width={46} height={66} borderRadius={9} fontSize={7} />
               <View style={styles.rowInfo}>
                 <Text style={[styles.rowTitle, { color: colors.ink }]} numberOfLines={1}>{item.title}</Text>
                 <Text style={[styles.rowMeta, { color: colors.muted2 }]}>{item.meta}</Text>
@@ -47,12 +91,11 @@ export function WatchlistScreen() {
           ))}
         </View>
 
-        {/* Vus & notés */}
         <SectionHeader title="Vus & notés" count={WATCHED.length} colors={colors} />
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           {WATCHED.map((item, i) => (
             <View key={item.id} style={[styles.row, i < WATCHED.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider }]}>
-              <PosterPlaceholder label={item.label} colors={item.colors} width={46} height={66} borderRadius={9} fontSize={7} />
+              <MediaPoster posterPath={posterPath(item)} fallbackLabel={item.label} fallbackColors={item.colors} width={46} height={66} borderRadius={9} fontSize={7} />
               <View style={styles.rowInfo}>
                 <Text style={[styles.rowTitle, { color: colors.ink }]} numberOfLines={1}>{item.title}</Text>
                 <Text style={[styles.rowMeta, { color: colors.muted2 }]}>{item.meta}</Text>
@@ -62,12 +105,11 @@ export function WatchlistScreen() {
           ))}
         </View>
 
-        {/* Recommandé par cercle */}
         <SectionHeader title="Recommandé par ton cercle" count={RECOMMENDED.length} colors={colors} />
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           {RECOMMENDED.map((item, i) => (
             <View key={item.id} style={[styles.row, i < RECOMMENDED.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider }]}>
-              <PosterPlaceholder label={item.label} colors={item.colors} width={46} height={66} borderRadius={9} fontSize={7} />
+              <MediaPoster posterPath={posterPath(item)} fallbackLabel={item.label} fallbackColors={item.colors} width={46} height={66} borderRadius={9} fontSize={7} />
               <View style={styles.rowInfo}>
                 <Text style={[styles.rowTitle, { color: colors.ink }]} numberOfLines={1}>{item.title}</Text>
                 <Text style={[styles.rowMeta, { color: colors.muted2 }]}>{item.meta}</Text>
