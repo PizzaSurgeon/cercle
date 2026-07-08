@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { Fonts } from '../theme';
-import { PosterPlaceholder } from './PosterPlaceholder';
+import { MediaPoster } from './MediaPoster';
 import { StarRating } from './StarRating';
 import { Avatar } from './Avatar';
 
@@ -20,6 +20,7 @@ export interface ConsensusCardProps {
   subtitle: string;
   posterLabel: string;
   posterColors: [string, string];
+  posterPath?: string | null;
   circleAverage: number;
   reviews: FriendReview[];
   progress?: { label: string; pct: number; pctLabel: string };
@@ -27,13 +28,21 @@ export interface ConsensusCardProps {
   onReviewerPress?: (name: string, initial: string, avatarBg: string, avatarFg: string) => void;
 }
 
-export function ConsensusCard({ title, subtitle, posterLabel, posterColors, circleAverage, reviews, progress, onPress, onReviewerPress }: ConsensusCardProps) {
+export function ConsensusCard({ title, subtitle, posterLabel, posterColors, posterPath, circleAverage, reviews, progress, onPress, onReviewerPress }: ConsensusCardProps) {
   const { colors } = useTheme();
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
       <View style={styles.header}>
-        <PosterPlaceholder label={posterLabel} colors={posterColors} width={92} height={134} borderRadius={13} fontSize={11} />
+        <MediaPoster
+          posterPath={posterPath ?? null}
+          fallbackLabel={posterLabel}
+          fallbackColors={posterColors}
+          width={92}
+          height={134}
+          borderRadius={13}
+          fontSize={11}
+        />
         <View style={styles.titleBlock}>
           <Text style={[styles.title, { color: colors.ink }]} numberOfLines={2}>{title}</Text>
           <Text style={[styles.subtitle, { color: colors.muted2 }]}>{subtitle}</Text>

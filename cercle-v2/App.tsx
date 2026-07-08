@@ -10,10 +10,12 @@ import { FeedScreen } from './src/screens/FeedScreen';
 import { WatchlistScreen } from './src/screens/WatchlistScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { BottomTabBar, Tab } from './src/components/BottomTabBar';
+import { SearchModal } from './src/components/SearchModal';
 
 function AppContent() {
   const { colors, isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<Tab>('cercle');
+  const [showSearch, setShowSearch] = useState(false);
 
   const renderScreen = () => {
     if (activeTab === 'liste') return <WatchlistScreen />;
@@ -25,7 +27,12 @@ function AppContent() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={{ flex: 1 }}>{renderScreen()}</View>
-      <BottomTabBar active={activeTab} onTabPress={setActiveTab} onAddPress={() => {}} />
+      <BottomTabBar active={activeTab} onTabPress={setActiveTab} onAddPress={() => setShowSearch(true)} />
+      <SearchModal
+        visible={showSearch}
+        onClose={() => setShowSearch(false)}
+        onSelectMedia={() => { setShowSearch(false); }}
+      />
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
@@ -10,6 +10,8 @@ import { FilmDetailModal } from '../components/FilmDetailModal';
 import { UserProfileModal } from '../components/UserProfileModal';
 import { RatingModal } from '../components/RatingModal';
 import { FriendReview } from '../components/ConsensusCard';
+import { getMediaDetails } from '../services/tmdb';
+import { MediaItem } from '../types/media';
 
 type FilterType = 'tout' | 'films' | 'séries' | 'animés';
 
@@ -87,11 +89,24 @@ interface ReviewerState {
 export function FeedScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
   const [filter, setFilter] = useState<FilterType>('tout');
+  const [tmdbData, setTmdbData] = useState<Record<string, MediaItem | null>>({});
 
   // Modal state
   const [selectedFilm, setSelectedFilm] = useState<FilmData | null>(null);
   const [selectedReviewer, setSelectedReviewer] = useState<ReviewerState | null>(null);
   const [showRating, setShowRating] = useState(false);
+
+  useEffect(() => {
+    async function fetchTmdbData() {
+      const [shogun, dune2, aot] = await Promise.all([
+        getMediaDetails(126308, 'tv').catch(() => null),
+        getMediaDetails(693134, 'movie').catch(() => null),
+        getMediaDetails(1429, 'tv').catch(() => null),
+      ]);
+      setTmdbData({ shogun, dune2, aot });
+    }
+    fetchTmdbData();
+  }, []);
 
   const visibleCards = CONSENSUS_DATA.filter(c => filter === 'tout' || c.type === filter);
 
@@ -155,6 +170,7 @@ export function FeedScreen() {
             subtitle={card.subtitle}
             posterLabel={card.posterLabel}
             posterColors={card.posterColors}
+            posterPath={tmdbData[card.id]?.posterPath ?? null}
             circleAverage={card.circleAverage}
             reviews={card.reviews}
             progress={card.progress}
@@ -190,6 +206,7 @@ export function FeedScreen() {
           onClose={() => setSelectedFilm(null)}
           onReviewerPress={handleReviewerPress}
           onRatingPress={handleRatingPress}
+          mediaItem={tmdbData[selectedFilm.id] ?? undefined}
         />
       )}
 
