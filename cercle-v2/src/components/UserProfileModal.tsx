@@ -83,8 +83,8 @@ export function UserProfileModal({ visible, name, initial, avatarBg, avatarFg, o
   const lists = getListsForName(name);
 
   return (
-    <Modal visible={visible} animationType="slide" transparent presentationStyle="overFullScreen" statusBarTranslucent>
-      <Pressable style={styles.backdrop} onPress={onClose}>
+    <Modal visible={visible} animationType="slide" statusBarTranslucent>
+      <Pressable style={[styles.backdrop, { backgroundColor: colors.background }]} onPress={onClose}>
         <Pressable
           style={[styles.sheet, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
           onPress={() => {}}
@@ -156,7 +156,6 @@ export function UserProfileModal({ visible, name, initial, avatarBg, avatarFg, o
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   sheet: {

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { Fonts } from '../theme';
 import { MediaPoster } from '../components/MediaPoster';
 import { Avatar } from '../components/Avatar';
+import { FilmDetailModal } from '../components/FilmDetailModal';
 import { getMediaDetails } from '../services/tmdb';
+import { MediaItem } from '../types/media';
 
 type MediaType = 'movie' | 'tv';
 
@@ -37,10 +39,10 @@ const TO_WATCH: ListItem[] = [
 ];
 
 const WATCHED: WatchedItem[] = [
-  { id: '1', tmdbId: 126308, tmdbType: 'tv',    title: 'Shōgun',                  meta: 'Série · 2024', label: 'SHŌGUN',     colors: ['#3E5C6B', '#1E2E38'], rating: '4,3' },
-  { id: '2', tmdbId: 693134, tmdbType: 'movie', title: 'Dune : Deuxième Partie',  meta: 'Film · 2024',  label: 'DUNE 2',     colors: ['#D9925A', '#A24123'], rating: '4,7' },
-  { id: '3', tmdbId: 877269, tmdbType: 'movie', title: 'Past Lives',              meta: 'Film · 2023',  label: 'PAST\nLIVES',colors: ['#8FA0B8', '#4E5E78'], rating: '4,5' },
-  { id: '4', tmdbId: 1429,   tmdbType: 'tv',    title: 'Attack on Titan',         meta: 'Animé · 2023', label: 'AOT',        colors: ['#6B3E2E', '#3A1A12'], rating: '4,8' },
+  { id: '1', tmdbId: 126308, tmdbType: 'tv',    title: 'Shōgun',                  meta: 'Série · 2024', label: 'SHŌGUN',      colors: ['#3E5C6B', '#1E2E38'], rating: '4,3' },
+  { id: '2', tmdbId: 693134, tmdbType: 'movie', title: 'Dune : Deuxième Partie',  meta: 'Film · 2024',  label: 'DUNE 2',      colors: ['#D9925A', '#A24123'], rating: '4,7' },
+  { id: '3', tmdbId: 877269, tmdbType: 'movie', title: 'Past Lives',              meta: 'Film · 2023',  label: 'PAST\nLIVES', colors: ['#8FA0B8', '#4E5E78'], rating: '4,5' },
+  { id: '4', tmdbId: 1429,   tmdbType: 'tv',    title: 'Attack on Titan',         meta: 'Animé · 2023', label: 'AOT',         colors: ['#6B3E2E', '#3A1A12'], rating: '4,8' },
 ];
 
 const RECOMMENDED: RecommendedItem[] = [
@@ -51,28 +53,42 @@ const RECOMMENDED: RecommendedItem[] = [
 
 const ALL_ITEMS: ListItem[] = [...TO_WATCH, ...WATCHED, ...RECOMMENDED];
 
+function itemKey(item: ListItem) {
+  return `${item.tmdbType}-${item.tmdbId}`;
+}
+
+interface SelectedItem {
+  item: ListItem;
+  circleAverage: number;
+}
+
 export function WatchlistScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const [posters, setPosters] = useState<Record<string, string | null>>({});
+  const [mediaData, setMediaData] = useState<Record<string, MediaItem | null>>({});
+  const [selected, setSelected] = useState<SelectedItem | null>(null);
 
   useEffect(() => {
-    async function fetchPosters() {
+    async function fetchAll() {
       const results = await Promise.all(
         ALL_ITEMS.map(item =>
           getMediaDetails(item.tmdbId, item.tmdbType)
-            .then(data => ({ key: `${item.tmdbType}-${item.tmdbId}`, path: data?.posterPath ?? null }))
-            .catch(() => ({ key: `${item.tmdbType}-${item.tmdbId}`, path: null }))
+            .then(data => ({ key: itemKey(item), data }))
+            .catch(() => ({ key: itemKey(item), data: null }))
         )
       );
-      const map: Record<string, string | null> = {};
-      results.forEach(r => { map[r.key] = r.path; });
-      setPosters(map);
+      const map: Record<string, MediaItem | null> = {};
+      results.forEach(r => { map[r.key] = r.data; });
+      setMediaData(map);
     }
-    fetchPosters();
+    fetchAll();
   }, []);
 
-  const posterPath = (item: ListItem) => posters[`${item.tmdbType}-${item.tmdbId}`] ?? null;
+  const posterPath = (item: ListItem) => mediaData[itemKey(item)]?.posterPath ?? null;
+
+  const openItem = (item: ListItem, circleAverage = 0) => {
+    setSelected({ item, circleAverage });
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
@@ -82,48 +98,65 @@ export function WatchlistScreen() {
         <SectionHeader title="À voir" count={TO_WATCH.length} colors={colors} />
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           {TO_WATCH.map((item, i) => (
-            <View key={item.id} style={[styles.row, i < TO_WATCH.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider }]}>
+            <TouchableOpacity key={item.id} onPress={() => openItem(item)} activeOpacity={0.75}
+              style={[styles.row, i < TO_WATCH.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider }]}>
               <MediaPoster posterPath={posterPath(item)} fallbackLabel={item.label} fallbackColors={item.colors} width={46} height={66} borderRadius={9} fontSize={7} />
               <View style={styles.rowInfo}>
                 <Text style={[styles.rowTitle, { color: colors.ink }]} numberOfLines={1}>{item.title}</Text>
                 <Text style={[styles.rowMeta, { color: colors.muted2 }]}>{item.meta}</Text>
               </View>
               <Text style={{ color: colors.accent, fontSize: 18 }}>🔖</Text>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
 
         <SectionHeader title="Vus & notés" count={WATCHED.length} colors={colors} />
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           {WATCHED.map((item, i) => (
-            <View key={item.id} style={[styles.row, i < WATCHED.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider }]}>
+            <TouchableOpacity key={item.id} onPress={() => openItem(item, parseFloat(item.rating.replace(',', '.')))} activeOpacity={0.75}
+              style={[styles.row, i < WATCHED.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider }]}>
               <MediaPoster posterPath={posterPath(item)} fallbackLabel={item.label} fallbackColors={item.colors} width={46} height={66} borderRadius={9} fontSize={7} />
               <View style={styles.rowInfo}>
                 <Text style={[styles.rowTitle, { color: colors.ink }]} numberOfLines={1}>{item.title}</Text>
                 <Text style={[styles.rowMeta, { color: colors.muted2 }]}>{item.meta}</Text>
               </View>
               <Text style={[styles.ratingBadge, { color: colors.starFill }]}>★ {item.rating}</Text>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
 
         <SectionHeader title="Recommandé par ton cercle" count={RECOMMENDED.length} colors={colors} />
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           {RECOMMENDED.map((item, i) => (
-            <View key={item.id} style={[styles.row, i < RECOMMENDED.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider }]}>
+            <TouchableOpacity key={item.id} onPress={() => openItem(item)} activeOpacity={0.75}
+              style={[styles.row, i < RECOMMENDED.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider }]}>
               <MediaPoster posterPath={posterPath(item)} fallbackLabel={item.label} fallbackColors={item.colors} width={46} height={66} borderRadius={9} fontSize={7} />
               <View style={styles.rowInfo}>
                 <Text style={[styles.rowTitle, { color: colors.ink }]} numberOfLines={1}>{item.title}</Text>
                 <Text style={[styles.rowMeta, { color: colors.muted2 }]}>{item.meta}</Text>
               </View>
               <View style={styles.byRow}>
-                <Avatar initial={item.byInitial} bg={item.byBg} fg={item.byFg} size={22} />
-                <Text style={[styles.byName, { color: colors.muted2 }]}>{item.by}</Text>
+                <Avatar initial={(item as RecommendedItem).byInitial} bg={(item as RecommendedItem).byBg} fg={(item as RecommendedItem).byFg} size={22} />
+                <Text style={[styles.byName, { color: colors.muted2 }]}>{(item as RecommendedItem).by}</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
+
+      {selected && (
+        <FilmDetailModal
+          visible={!!selected}
+          title={selected.item.title}
+          subtitle={selected.item.meta}
+          posterLabel={selected.item.label}
+          posterColors={selected.item.colors}
+          circleAverage={selected.circleAverage}
+          reviews={[]}
+          onClose={() => setSelected(null)}
+          mediaItem={mediaData[itemKey(selected.item)] ?? undefined}
+        />
+      )}
     </View>
   );
 }

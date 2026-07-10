@@ -42,7 +42,7 @@ function getItemTitle(item: TMDBSearchResult): string {
 }
 
 export function SearchModal({ visible, onClose, onSelectMedia }: SearchModalProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<TMDBSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -149,6 +149,7 @@ export function SearchModal({ visible, onClose, onSelectMedia }: SearchModalProp
             autoFocus={true}
             returnKeyType="search"
             clearButtonMode="while-editing"
+            keyboardAppearance={isDark ? 'dark' : 'light'}
           />
           {loading && (
             <ActivityIndicator size="small" color={colors.accent} style={styles.loader} />
