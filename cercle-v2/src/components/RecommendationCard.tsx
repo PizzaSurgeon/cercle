@@ -1,41 +1,52 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { Fonts } from '../theme';
-import { PosterPlaceholder } from './PosterPlaceholder';
+import { MediaPoster } from './MediaPoster';
 import { Avatar } from './Avatar';
 
 interface RecommendationCardProps {
   title: string;
   posterLabel: string;
   posterColors: [string, string];
+  posterPath?: string | null;
   recommenderInitial: string;
   recommenderName: string;
   recommenderAvatarBg: string;
   recommenderAvatarFg: string;
+  onPress?: () => void;
+  onReviewerPress?: () => void;
 }
 
-export function RecommendationCard({ title, posterLabel, posterColors, recommenderInitial, recommenderName, recommenderAvatarBg, recommenderAvatarFg }: RecommendationCardProps) {
+export function RecommendationCard({ title, posterLabel, posterColors, posterPath, recommenderInitial, recommenderName, recommenderAvatarBg, recommenderAvatarFg, onPress, onReviewerPress }: RecommendationCardProps) {
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-      <PosterPlaceholder label={posterLabel} colors={posterColors} width={62} height={90} borderRadius={11} fontSize={8} />
+    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+      <MediaPoster
+        posterPath={posterPath ?? null}
+        fallbackLabel={posterLabel}
+        fallbackColors={posterColors}
+        width={62}
+        height={90}
+        borderRadius={11}
+        fontSize={8}
+      />
       <View style={styles.content}>
         <LinearGradient colors={[colors.accent, colors.accentEnd]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.badge}>
           <Text style={[styles.badgeText, { color: colors.onAccent }]}>RECOMMANDÉ POUR TOI</Text>
         </LinearGradient>
         <Text style={[styles.title, { color: colors.ink }]}>{title}</Text>
-        <View style={styles.recommenderRow}>
+        <TouchableOpacity onPress={onReviewerPress} activeOpacity={0.7} style={styles.recommenderRow}>
           <Avatar initial={recommenderInitial} bg={recommenderAvatarBg} fg={recommenderAvatarFg} size={20} />
           <Text style={[styles.recommenderText, { color: colors.chipText }]} numberOfLines={1}>
             <Text style={[styles.recommenderName, { color: colors.chipText }]}>{recommenderName}</Text>
             {' pense que ça va te plaire'}
           </Text>
-        </View>
+        </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

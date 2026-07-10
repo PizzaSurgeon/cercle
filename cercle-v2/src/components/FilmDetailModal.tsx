@@ -116,9 +116,8 @@ export function FilmDetailModal({
   const posterPath = mediaItem?.posterPath ?? null;
 
   return (
-    <>
-      <Modal visible={visible} animationType="slide" statusBarTranslucent>
-        <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]}>
+    <Modal visible={visible} animationType="slide" statusBarTranslucent>
+      <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]}>
           {/* Navbar */}
           <View style={[styles.navbar, { borderBottomColor: colors.divider }]}>
             <View style={styles.navSpacer} />
@@ -218,16 +217,14 @@ export function FilmDetailModal({
               </LinearGradient>
             </TouchableOpacity>
           </View>
-        </SafeAreaView>
-      </Modal>
-
+      </SafeAreaView>
       <RatingModal
         visible={showRating}
         title={title}
         onClose={() => setShowRating(false)}
         onSubmit={() => setShowRating(false)}
       />
-    </>
+    </Modal>
   );
 }
 

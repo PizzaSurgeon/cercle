@@ -37,124 +37,26 @@ const RECOMMEND_OPTIONS: { key: 'cercle' | 'amis' | 'none'; label: string; emoji
   { key: 'none', label: 'Ne pas recommander', emoji: '—' },
 ];
 
-function StarSelector({ rating, onRate }: { rating: number; onRate: (r: number) => void }) {
-  const { colors } = useTheme();
-
-  return (
-    <View style={starStyles.row}>
-      {[1, 2, 3, 4, 5].map((star) => {
-        const full = rating >= star;
-        const half = !full && rating >= star - 0.5;
-
-        return (
-          <View key={star} style={starStyles.starWrapper}>
-            {/* Half left */}
-            <TouchableOpacity
-              style={starStyles.halfLeft}
-              onPress={() => onRate(star - 0.5)}
-              activeOpacity={0.6}
-            >
-              <Text style={[starStyles.starBase, { color: colors.starEmpty }]}>★</Text>
-              {(full || half) && (
-                <View style={[starStyles.halfOverlay, { width: '50%' }]}>
-                  <Text style={[starStyles.starBase, { color: colors.starFill }]}>★</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-            {/* Half right */}
-            <TouchableOpacity
-              style={starStyles.halfRight}
-              onPress={() => onRate(star)}
-              activeOpacity={0.6}
-            >
-              {full && (
-                <View style={[starStyles.halfOverlay, { width: '100%', left: 0 }]}>
-                  <Text style={[starStyles.starBase, { color: colors.starFill }]}>★</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
-const starStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    gap: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  starWrapper: {
-    width: 48,
-    height: 48,
-    position: 'relative',
-  },
-  starBase: {
-    fontSize: 42,
-    lineHeight: 48,
-  },
-  halfLeft: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    width: '50%',
-    height: '100%',
-    overflow: 'hidden',
-  },
-  halfRight: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    width: '50%',
-    height: '100%',
-    overflow: 'hidden',
-  },
-  halfOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    height: '100%',
-    overflow: 'hidden',
-  },
-});
-
 export function RatingModal({ visible, title, onClose, onSubmit }: RatingModalProps) {
   const { colors } = useTheme();
 
-  const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [platform, setPlatform] = useState('');
   const [recommend, setRecommend] = useState<'cercle' | 'amis' | 'none'>('cercle');
 
-  const canSubmit = rating > 0;
-
   const handleSubmit = () => {
-    if (!canSubmit) return;
-    onSubmit(rating, comment, platform, recommend);
-    // Reset state
-    setRating(0);
+    onSubmit(0, comment, platform, recommend);
     setComment('');
     setPlatform('');
     setRecommend('cercle');
   };
 
   const handleClose = () => {
-    setRating(0);
     setComment('');
     setPlatform('');
     setRecommend('cercle');
     onClose();
   };
-
-  const ratingLabel = rating === 0
-    ? 'Sélectionne une note'
-    : rating % 1 !== 0
-    ? `${rating.toFixed(1).replace('.', ',')} étoiles`
-    : `${rating} étoile${rating > 1 ? 's' : ''}`;
 
   return (
     <Modal visible={visible} animationType="slide" transparent statusBarTranslucent>
@@ -179,15 +81,6 @@ export function RatingModal({ visible, title, onClose, onSubmit }: RatingModalPr
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-
-            {/* Stars */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: colors.ink }]}>Ta note</Text>
-              <StarSelector rating={rating} onRate={setRating} />
-              <Text style={[styles.ratingLabel, { color: rating > 0 ? colors.starFill : colors.muted }]}>
-                {ratingLabel}
-              </Text>
-            </View>
 
             {/* Comment */}
             <View style={styles.section}>
@@ -274,19 +167,16 @@ export function RatingModal({ visible, title, onClose, onSubmit }: RatingModalPr
           {/* Submit */}
           <TouchableOpacity
             onPress={handleSubmit}
-            disabled={!canSubmit}
-            activeOpacity={canSubmit ? 0.85 : 1}
+            activeOpacity={0.85}
             style={styles.submitTouchable}
           >
             <LinearGradient
-              colors={canSubmit ? [colors.accent, colors.accentEnd] : [colors.track, colors.track]}
+              colors={[colors.accent, colors.accentEnd]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.submitButton}
             >
-              <Text style={[styles.submitText, { color: canSubmit ? colors.onAccent : colors.muted }]}>
-                Publier
-              </Text>
+              <Text style={[styles.submitText, { color: colors.onAccent }]}>Publier</Text>
             </LinearGradient>
           </TouchableOpacity>
         </Pressable>
@@ -357,12 +247,6 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     fontSize: 14,
     marginBottom: 10,
-  },
-  ratingLabel: {
-    fontFamily: Fonts.medium,
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 4,
   },
   textInputWrapper: {
     borderRadius: 14,

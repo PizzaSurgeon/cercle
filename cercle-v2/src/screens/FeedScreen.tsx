@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { Fonts } from '../theme';
 import { ConsensusCard } from '../components/ConsensusCard';
@@ -69,6 +70,19 @@ const CONSENSUS_DATA: FilmData[] = [
   },
 ];
 
+const RECO_FILM: FilmData = {
+  id: 'pastlives',
+  title: 'Past Lives',
+  subtitle: 'Film · 2023 · Drame romantique',
+  posterLabel: 'PAST\nLIVES',
+  posterColors: ['#8FA0B8', '#4E5E78'],
+  circleAverage: 4.5,
+  type: 'films',
+  reviews: [
+    { initial: 'M', name: 'Maxime', avatarBg: '#B8C8A8', avatarFg: '#42562E', rating: 4.5 },
+  ],
+};
+
 const FILTERS: { key: FilterType; label: string }[] = [
   { key: 'tout', label: 'Tout' },
   { key: 'films', label: 'Films' },
@@ -85,37 +99,36 @@ interface ReviewerState {
 
 export function FeedScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
+  const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<FilterType>('tout');
   const [tmdbData, setTmdbData] = useState<Record<string, MediaItem | null>>({});
 
-  // Modal state
   const [selectedFilm, setSelectedFilm] = useState<FilmData | null>(null);
   const [selectedReviewer, setSelectedReviewer] = useState<ReviewerState | null>(null);
 
   useEffect(() => {
     async function fetchTmdbData() {
-      const [shogun, dune2, aot] = await Promise.all([
+      const [shogun, dune2, aot, pastlives] = await Promise.all([
         getMediaDetails(126308, 'tv').catch(() => null),
         getMediaDetails(693134, 'movie').catch(() => null),
         getMediaDetails(1429, 'tv').catch(() => null),
+        getMediaDetails(877269, 'movie').catch(() => null),
       ]);
-      setTmdbData({ shogun, dune2, aot });
+      setTmdbData({ shogun, dune2, aot, pastlives });
     }
     fetchTmdbData();
   }, []);
 
   const visibleCards = CONSENSUS_DATA.filter(c => filter === 'tout' || c.type === filter);
+  const showReco = filter === 'tout' || filter === 'films';
 
-  const handleFilmPress = (film: FilmData) => {
-    setSelectedFilm(film);
-  };
-
+  const handleFilmPress = (film: FilmData) => setSelectedFilm(film);
   const handleReviewerPress = (name: string, initial: string, avatarBg: string, avatarFg: string) => {
     setSelectedReviewer({ name, initial, avatarBg, avatarFg });
   };
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+    <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* Brand header */}
@@ -166,15 +179,18 @@ export function FeedScreen() {
         ))}
 
         {/* Recommendation */}
-        {(filter === 'tout' || filter === 'films') && (
+        {showReco && (
           <RecommendationCard
-            title="Past Lives"
-            posterLabel={'PAST\nLIVES'}
-            posterColors={['#8FA0B8', '#4E5E78']}
+            title={RECO_FILM.title}
+            posterLabel={RECO_FILM.posterLabel}
+            posterColors={RECO_FILM.posterColors}
+            posterPath={tmdbData['pastlives']?.posterPath ?? null}
             recommenderInitial="M"
             recommenderName="Maxime"
             recommenderAvatarBg="#B8C8A8"
             recommenderAvatarFg="#42562E"
+            onPress={() => handleFilmPress(RECO_FILM)}
+            onReviewerPress={() => handleReviewerPress('Maxime', 'M', '#B8C8A8', '#42562E')}
           />
         )}
       </ScrollView>
@@ -206,7 +222,6 @@ export function FeedScreen() {
           onClose={() => setSelectedReviewer(null)}
         />
       )}
-
     </View>
   );
 }
