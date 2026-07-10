@@ -40,7 +40,7 @@ function AppContent() {
         visible={!!searchRating}
         title={searchRating?.title ?? searchRating?.name ?? ''}
         onClose={() => setSearchRating(null)}
-        onSubmit={() => setSearchRating(null)}
+        onSubmit={() => { setSearchRating(null); }}
       />
     </View>
   );

@@ -229,7 +229,7 @@ export function FilmDetailModal({
         visible={showRating}
         title={title}
         onClose={() => setShowRating(false)}
-        onSubmit={() => setShowRating(false)}
+        onSubmit={() => { setShowRating(false); }}
       />
       {reviewer && (
         <UserProfileModal

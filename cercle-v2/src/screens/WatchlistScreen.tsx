@@ -6,6 +6,7 @@ import { Fonts } from '../theme';
 import { MediaPoster } from '../components/MediaPoster';
 import { Avatar } from '../components/Avatar';
 import { FilmDetailModal } from '../components/FilmDetailModal';
+import { FriendReview } from '../components/ConsensusCard';
 import { getMediaDetails } from '../services/tmdb';
 import { MediaItem } from '../types/media';
 
@@ -51,6 +52,26 @@ const RECOMMENDED: RecommendedItem[] = [
   { id: '3', tmdbId: 100088, tmdbType: 'tv',    title: 'The Last of Us',  meta: 'Série · 2023', label: 'TLOU',  colors: ['#4A6B3A', '#2A3E20'], byInitial: 'L', by: 'Léa',  byBg: '#E5B98A', byFg: '#7A3B22' },
 ];
 
+const REVIEWS_MAP: Record<string, FriendReview[]> = {
+  'Shōgun': [
+    { initial: 'C', name: 'Camille', avatarBg: '#D9A8B4', avatarFg: '#6B2E3E', rating: 5 },
+    { initial: 'T', name: 'Tom',     avatarBg: '#A9C0CE', avatarFg: '#2E4A57', rating: 4 },
+    { initial: 'S', name: 'Sofia',   avatarBg: '#C7B79B', avatarFg: '#5A4A30', rating: 4 },
+  ],
+  'Dune : Deuxième Partie': [
+    { initial: 'L', name: 'Léa',    avatarBg: '#E5B98A', avatarFg: '#7A3B22', rating: 5 },
+    { initial: 'M', name: 'Maxime', avatarBg: '#B8C8A8', avatarFg: '#42562E', rating: 5 },
+    { initial: 'T', name: 'Tom',    avatarBg: '#A9C0CE', avatarFg: '#2E4A57', rating: 4.5 },
+  ],
+  'Past Lives': [
+    { initial: 'M', name: 'Maxime', avatarBg: '#B8C8A8', avatarFg: '#42562E', rating: 4.5 },
+  ],
+  'Attack on Titan': [
+    { initial: 'S', name: 'Sofia', avatarBg: '#C7B79B', avatarFg: '#5A4A30', rating: 5 },
+    { initial: 'L', name: 'Léa',   avatarBg: '#E5B98A', avatarFg: '#7A3B22', rating: 4.5 },
+  ],
+};
+
 const ALL_ITEMS: ListItem[] = [...TO_WATCH, ...WATCHED, ...RECOMMENDED];
 
 function itemKey(item: ListItem) {
@@ -60,6 +81,7 @@ function itemKey(item: ListItem) {
 interface SelectedItem {
   item: ListItem;
   circleAverage: number;
+  reviews: FriendReview[];
 }
 
 export function WatchlistScreen() {
@@ -87,7 +109,7 @@ export function WatchlistScreen() {
   const posterPath = (item: ListItem) => mediaData[itemKey(item)]?.posterPath ?? null;
 
   const openItem = (item: ListItem, circleAverage = 0) => {
-    setSelected({ item, circleAverage });
+    setSelected({ item, circleAverage, reviews: REVIEWS_MAP[item.title] ?? [] });
   };
 
   return (
@@ -152,7 +174,7 @@ export function WatchlistScreen() {
           posterLabel={selected.item.label}
           posterColors={selected.item.colors}
           circleAverage={selected.circleAverage}
-          reviews={[]}
+          reviews={selected.reviews}
           onClose={() => setSelected(null)}
           mediaItem={mediaData[itemKey(selected.item)] ?? undefined}
         />

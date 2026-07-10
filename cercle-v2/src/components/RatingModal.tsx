@@ -12,77 +12,79 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { Fonts } from '../theme';
+import { Avatar } from './Avatar';
 
 interface RatingModalProps {
   visible: boolean;
   title: string;
   onClose: () => void;
-  onSubmit: (rating: number, comment: string, platform: string, recommend: 'cercle' | 'amis' | 'none') => void;
+  onSubmit: (rating: number, comment: string, platform: string, selectedPeople: string[]) => void;
 }
 
-const PLATFORMS = [
-  'Netflix',
-  'Prime Video',
-  'Disney+',
-  'Apple TV+',
-  'Canal+',
-  'Crunchyroll',
-  'Salle',
-  'Autre',
+const PLATFORMS = ['Netflix', 'Prime Video', 'Disney+', 'Apple TV+', 'Canal+', 'Crunchyroll', 'Salle', 'Autre'];
+
+const CIRCLE_MEMBERS = [
+  { name: 'Camille', initial: 'C', bg: '#D9A8B4', fg: '#6B2E3E' },
+  { name: 'Tom',     initial: 'T', bg: '#A9C0CE', fg: '#2E4A57' },
+  { name: 'Sofia',   initial: 'S', bg: '#C7B79B', fg: '#5A4A30' },
+  { name: 'Léa',     initial: 'L', bg: '#E5B98A', fg: '#7A3B22' },
+  { name: 'Maxime',  initial: 'M', bg: '#B8C8A8', fg: '#42562E' },
 ];
 
-const RECOMMEND_OPTIONS: { key: 'cercle' | 'amis' | 'none'; label: string; emoji: string }[] = [
-  { key: 'cercle', label: 'Mon cercle', emoji: '○' },
-  { key: 'amis', label: 'Amis proches', emoji: '♡' },
-  { key: 'none', label: 'Ne pas recommander', emoji: '—' },
-];
+const ALL_NAMES = CIRCLE_MEMBERS.map(m => m.name);
 
 export function RatingModal({ visible, title, onClose, onSubmit }: RatingModalProps) {
   const { colors } = useTheme();
 
   const [comment, setComment] = useState('');
   const [platform, setPlatform] = useState('');
-  const [recommend, setRecommend] = useState<'cercle' | 'amis' | 'none'>('cercle');
+  const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
+
+  const allSelected = ALL_NAMES.every(n => selectedPeople.includes(n));
+
+  const toggleAll = () => {
+    setSelectedPeople(allSelected ? [] : [...ALL_NAMES]);
+  };
+
+  const togglePerson = (name: string) => {
+    setSelectedPeople(prev =>
+      prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
+    );
+  };
 
   const handleSubmit = () => {
-    onSubmit(0, comment, platform, recommend);
-    setComment('');
-    setPlatform('');
-    setRecommend('cercle');
+    onSubmit(0, comment, platform, selectedPeople);
+    reset();
   };
 
   const handleClose = () => {
+    reset();
+    onClose();
+  };
+
+  const reset = () => {
     setComment('');
     setPlatform('');
-    setRecommend('cercle');
-    onClose();
+    setSelectedPeople([]);
   };
 
   return (
     <Modal visible={visible} animationType="slide" transparent statusBarTranslucent>
       <Pressable style={styles.backdrop} onPress={handleClose}>
-        <Pressable
-          style={[styles.sheet, { backgroundColor: colors.background, borderColor: colors.cardBorder }]}
-          onPress={() => {}}
-        >
-          {/* Handle */}
+        <Pressable style={[styles.sheet, { backgroundColor: colors.background, borderColor: colors.cardBorder }]} onPress={() => {}}>
+
           <View style={[styles.handle, { backgroundColor: colors.muted }]} />
 
-          {/* Header */}
           <View style={[styles.header, { borderBottomColor: colors.divider }]}>
             <Text style={[styles.headerTitle, { color: colors.ink }]} numberOfLines={1}>{title}</Text>
-            <TouchableOpacity
-              onPress={handleClose}
-              style={[styles.closeBtn, { backgroundColor: colors.chip, borderColor: colors.cardBorder }]}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity onPress={handleClose} style={[styles.closeBtn, { backgroundColor: colors.chip, borderColor: colors.cardBorder }]} activeOpacity={0.7}>
               <Text style={[styles.closeBtnText, { color: colors.muted }]}>×</Text>
             </TouchableOpacity>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-            {/* Comment */}
+            {/* Avis */}
             <View style={styles.section}>
               <Text style={[styles.sectionLabel, { color: colors.ink }]}>Ton avis</Text>
               <View style={[styles.textInputWrapper, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
@@ -99,30 +101,21 @@ export function RatingModal({ visible, title, onClose, onSubmit }: RatingModalPr
               </View>
             </View>
 
-            {/* Platform */}
+            {/* Plateforme */}
             <View style={styles.section}>
               <Text style={[styles.sectionLabel, { color: colors.ink }]}>Plateforme de visionnage</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
-                {PLATFORMS.map((p) => {
+                {PLATFORMS.map(p => {
                   const isActive = platform === p;
                   return isActive ? (
                     <TouchableOpacity key={p} onPress={() => setPlatform('')} activeOpacity={0.75}>
-                      <LinearGradient
-                        colors={[colors.accent, colors.accentEnd]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.chipActive}
-                      >
+                      <LinearGradient colors={[colors.accent, colors.accentEnd]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.chipActive}>
                         <Text style={[styles.chipTextActive, { color: colors.onAccent }]}>{p}</Text>
                       </LinearGradient>
                     </TouchableOpacity>
                   ) : (
-                    <TouchableOpacity
-                      key={p}
-                      onPress={() => setPlatform(p)}
-                      activeOpacity={0.75}
-                      style={[styles.chip, { backgroundColor: colors.chip, borderColor: colors.chipBorder }]}
-                    >
+                    <TouchableOpacity key={p} onPress={() => setPlatform(p)} activeOpacity={0.75}
+                      style={[styles.chip, { backgroundColor: colors.chip, borderColor: colors.chipBorder }]}>
                       <Text style={[styles.chipText, { color: colors.chipText }]}>{p}</Text>
                     </TouchableOpacity>
                   );
@@ -130,30 +123,34 @@ export function RatingModal({ visible, title, onClose, onSubmit }: RatingModalPr
               </ScrollView>
             </View>
 
-            {/* Recommend */}
+            {/* Recommander à */}
             <View style={styles.section}>
               <Text style={[styles.sectionLabel, { color: colors.ink }]}>Recommander à</Text>
-              <View style={styles.recommendRow}>
-                {RECOMMEND_OPTIONS.map((opt) => {
-                  const isActive = recommend === opt.key;
+
+              {/* Tout le cercle */}
+              <TouchableOpacity onPress={toggleAll} activeOpacity={0.75}
+                style={[styles.tousBtn, {
+                  backgroundColor: allSelected ? colors.accent + '22' : colors.chip,
+                  borderColor: allSelected ? colors.accent : colors.chipBorder,
+                }]}>
+                <Text style={[styles.tousBtnText, { color: allSelected ? colors.accent : colors.ink2 }]}>
+                  Tout le cercle
+                </Text>
+              </TouchableOpacity>
+
+              {/* Grille des membres */}
+              <View style={styles.membersGrid}>
+                {CIRCLE_MEMBERS.map(member => {
+                  const isSelected = selectedPeople.includes(member.name);
                   return (
-                    <TouchableOpacity
-                      key={opt.key}
-                      onPress={() => setRecommend(opt.key)}
-                      activeOpacity={0.75}
-                      style={[
-                        styles.recommendChip,
-                        {
-                          backgroundColor: isActive ? colors.accent + '22' : colors.chip,
-                          borderColor: isActive ? colors.accent : colors.chipBorder,
-                        },
-                      ]}
-                    >
-                      <Text style={[styles.recommendEmoji, { color: isActive ? colors.accent : colors.muted }]}>
-                        {opt.emoji}
-                      </Text>
-                      <Text style={[styles.recommendLabel, { color: isActive ? colors.accent : colors.ink2 }]}>
-                        {opt.label}
+                    <TouchableOpacity key={member.name} onPress={() => togglePerson(member.name)} activeOpacity={0.75}
+                      style={[styles.memberCell, {
+                        backgroundColor: isSelected ? colors.accent + '18' : colors.chip,
+                        borderColor: isSelected ? colors.accent : colors.chipBorder,
+                      }]}>
+                      <Avatar initial={member.initial} bg={member.bg} fg={member.fg} size={36} />
+                      <Text style={[styles.memberName, { color: isSelected ? colors.accent : colors.ink2 }]} numberOfLines={1}>
+                        {member.name}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -164,21 +161,12 @@ export function RatingModal({ visible, title, onClose, onSubmit }: RatingModalPr
             <View style={{ height: 20 }} />
           </ScrollView>
 
-          {/* Submit */}
-          <TouchableOpacity
-            onPress={handleSubmit}
-            activeOpacity={0.85}
-            style={styles.submitTouchable}
-          >
-            <LinearGradient
-              colors={[colors.accent, colors.accentEnd]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.submitButton}
-            >
+          <TouchableOpacity onPress={handleSubmit} activeOpacity={0.85} style={styles.submitTouchable}>
+            <LinearGradient colors={[colors.accent, colors.accentEnd]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.submitButton}>
               <Text style={[styles.submitText, { color: colors.onAccent }]}>Publier</Text>
             </LinearGradient>
           </TouchableOpacity>
+
         </Pressable>
       </Pressable>
     </Modal>
@@ -291,25 +279,34 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     fontSize: 13,
   },
-  recommendRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  recommendChip: {
-    flex: 1,
+  tousBtn: {
     borderWidth: 1,
     borderRadius: 14,
     paddingVertical: 12,
     alignItems: 'center',
-    gap: 4,
+    marginBottom: 10,
   },
-  recommendEmoji: {
-    fontSize: 18,
+  tousBtnText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 14,
   },
-  recommendLabel: {
+  membersGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  memberCell: {
+    width: '30%',
+    flexGrow: 1,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+    gap: 6,
+  },
+  memberName: {
     fontFamily: Fonts.medium,
-    fontSize: 11,
-    textAlign: 'center',
+    fontSize: 12,
   },
   submitTouchable: {
     borderRadius: 16,
