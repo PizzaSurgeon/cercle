@@ -206,7 +206,6 @@ export function FeedScreen() {
           circleAverage={selectedFilm.circleAverage}
           reviews={selectedFilm.reviews}
           onClose={() => setSelectedFilm(null)}
-          onReviewerPress={handleReviewerPress}
           mediaItem={tmdbData[selectedFilm.id] ?? undefined}
         />
       )}

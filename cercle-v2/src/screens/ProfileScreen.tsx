@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { Fonts } from '../theme';
 import { MoonIcon, SunIcon, ChevronIcon } from '../components/Icons';
@@ -29,9 +30,10 @@ const FORMAT_TILES = [
 
 export function ProfileScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+    <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[styles.pageTitle, { color: colors.ink }]}>Profil</Text>
 

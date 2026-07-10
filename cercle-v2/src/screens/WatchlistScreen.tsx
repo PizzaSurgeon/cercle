@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { Fonts } from '../theme';
 import { MediaPoster } from '../components/MediaPoster';
@@ -52,6 +53,7 @@ const ALL_ITEMS: ListItem[] = [...TO_WATCH, ...WATCHED, ...RECOMMENDED];
 
 export function WatchlistScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [posters, setPosters] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
@@ -73,7 +75,7 @@ export function WatchlistScreen() {
   const posterPath = (item: ListItem) => posters[`${item.tmdbType}-${item.tmdbId}`] ?? null;
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+    <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[styles.pageTitle, { color: colors.ink }]}>Ma liste</Text>
 

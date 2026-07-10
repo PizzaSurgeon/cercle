@@ -15,6 +15,7 @@ import { Avatar } from './Avatar';
 import { StarRating } from './StarRating';
 import { MediaPoster } from './MediaPoster';
 import { RatingModal } from './RatingModal';
+import { UserProfileModal } from './UserProfileModal';
 import { FriendReview } from './ConsensusCard';
 import { MediaItem } from '../types/media';
 
@@ -27,8 +28,14 @@ interface FilmDetailModalProps {
   circleAverage: number;
   reviews: FriendReview[];
   onClose: () => void;
-  onReviewerPress: (name: string, initial: string, avatarBg: string, avatarFg: string) => void;
   mediaItem?: MediaItem;
+}
+
+interface ReviewerInfo {
+  name: string;
+  initial: string;
+  avatarBg: string;
+  avatarFg: string;
 }
 
 interface MockComment {
@@ -104,11 +111,11 @@ export function FilmDetailModal({
   circleAverage,
   reviews,
   onClose,
-  onReviewerPress,
   mediaItem,
 }: FilmDetailModalProps) {
   const { colors } = useTheme();
   const [showRating, setShowRating] = useState(false);
+  const [reviewer, setReviewer] = useState<ReviewerInfo | null>(null);
 
   const platform = getPlatformForTitle(title);
   const durationLabel = mediaItem ? formatDuration(mediaItem) : null;
@@ -184,7 +191,7 @@ export function FilmDetailModal({
               <View key={i} style={[styles.reviewCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
                 <View style={styles.reviewHeader}>
                   <TouchableOpacity
-                    onPress={() => onReviewerPress(r.name, r.initial, r.avatarBg, r.avatarFg)}
+                    onPress={() => setReviewer({ name: r.name, initial: r.initial, avatarBg: r.avatarBg, avatarFg: r.avatarFg })}
                     style={styles.reviewerRow}
                     activeOpacity={0.7}
                   >
@@ -224,6 +231,16 @@ export function FilmDetailModal({
         onClose={() => setShowRating(false)}
         onSubmit={() => setShowRating(false)}
       />
+      {reviewer && (
+        <UserProfileModal
+          visible={!!reviewer}
+          name={reviewer.name}
+          initial={reviewer.initial}
+          avatarBg={reviewer.avatarBg}
+          avatarFg={reviewer.avatarFg}
+          onClose={() => setReviewer(null)}
+        />
+      )}
     </Modal>
   );
 }
