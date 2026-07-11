@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   View,
@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Pressable,
+  SafeAreaView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { Fonts } from '../theme';
 import { Avatar } from './Avatar';
+import { StarRating } from './StarRating';
+import { ChevronIcon } from './Icons';
 
 interface UserProfileModalProps {
   visible: boolean;
@@ -22,11 +24,11 @@ interface UserProfileModalProps {
   onClose: () => void;
 }
 
-interface UserStats {
+interface UserWatched {
   films: number;
-  avgRating: number;
   series: number;
   anime: number;
+  avgRating: number;
 }
 
 interface PublicList {
@@ -34,15 +36,15 @@ interface PublicList {
   count: number;
 }
 
-function getStatsForName(name: string): UserStats {
-  const map: Record<string, UserStats> = {
-    Camille: { films: 38, avgRating: 4.1, series: 11, anime: 2 },
-    Tom:     { films: 24, avgRating: 3.7, series: 6,  anime: 4 },
-    Sofia:   { films: 45, avgRating: 4.3, series: 9,  anime: 7 },
-    Léa:     { films: 31, avgRating: 4.0, series: 8,  anime: 3 },
-    Maxime:  { films: 52, avgRating: 4.6, series: 14, anime: 5 },
+function getWatchedForName(name: string): UserWatched {
+  const map: Record<string, UserWatched> = {
+    Camille: { films: 38, series: 11, anime: 2,  avgRating: 4.1 },
+    Tom:     { films: 24, series: 6,  anime: 4,  avgRating: 3.7 },
+    Sofia:   { films: 45, series: 9,  anime: 7,  avgRating: 4.3 },
+    Léa:     { films: 31, series: 8,  anime: 3,  avgRating: 4.0 },
+    Maxime:  { films: 52, series: 14, anime: 5,  avgRating: 4.6 },
   };
-  return map[name] ?? { films: 32, avgRating: 3.8, series: 8, anime: 5 };
+  return map[name] ?? { films: 32, series: 8, anime: 5, avgRating: 3.8 };
 }
 
 function getListsForName(name: string): PublicList[] {
@@ -71,196 +73,150 @@ function getListsForName(name: string): PublicList[] {
       { title: 'Top Nolan', count: 7 },
     ],
   };
-  return map[name] ?? [
-    { title: 'Ma liste', count: 12 },
-    { title: 'Favoris', count: 7 },
-  ];
+  return map[name] ?? [{ title: 'Ma liste', count: 12 }];
 }
 
 export function UserProfileModal({ visible, name, initial, avatarBg, avatarFg, onClose }: UserProfileModalProps) {
   const { colors } = useTheme();
-  const stats = getStatsForName(name);
+  const watched = getWatchedForName(name);
   const lists = getListsForName(name);
+
+  const watchedRows = [
+    { label: 'Films',  count: watched.films },
+    { label: 'Séries', count: watched.series },
+    { label: 'Animés', count: watched.anime },
+  ];
 
   return (
     <Modal visible={visible} animationType="slide" statusBarTranslucent>
-      <Pressable style={[styles.backdrop, { backgroundColor: colors.background }]} onPress={onClose}>
-        <Pressable
-          style={[styles.sheet, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
-          onPress={() => {}}
-        >
-          {/* Drag handle */}
-          <View style={[styles.handle, { backgroundColor: colors.muted }]} />
-
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Header */}
-            <View style={styles.headerSection}>
-              <LinearGradient
-                colors={[colors.accent, colors.accentEnd]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.avatarGradient}
-              >
-                <Text style={[styles.avatarLetter, { color: colors.onAccent }]}>{initial}</Text>
-              </LinearGradient>
-              <Text style={[styles.userName, { color: colors.ink }]}>{name}</Text>
-              <Text style={[styles.memberSince, { color: colors.muted }]}>Membre depuis 2023</Text>
-            </View>
-
-            {/* Stats grid */}
-            <View style={[styles.statsGrid, { borderColor: colors.cardBorder }]}>
-              <View style={[styles.statCell, { borderRightWidth: 1, borderBottomWidth: 1, borderColor: colors.cardBorder }]}>
-                <Text style={[styles.statValue, { color: colors.ink }]}>{stats.films}</Text>
-                <Text style={[styles.statLabel, { color: colors.muted }]}>films</Text>
-              </View>
-              <View style={[styles.statCell, { borderBottomWidth: 1, borderColor: colors.cardBorder }]}>
-                <Text style={[styles.statValue, { color: colors.starFill }]}>{stats.avgRating.toFixed(1).replace('.', ',')}★</Text>
-                <Text style={[styles.statLabel, { color: colors.muted }]}>note moy.</Text>
-              </View>
-              <View style={[styles.statCell, { borderRightWidth: 1, borderColor: colors.cardBorder }]}>
-                <Text style={[styles.statValue, { color: colors.ink }]}>{stats.series}</Text>
-                <Text style={[styles.statLabel, { color: colors.muted }]}>séries</Text>
-              </View>
-              <View style={styles.statCell}>
-                <Text style={[styles.statValue, { color: colors.ink }]}>{stats.anime}</Text>
-                <Text style={[styles.statLabel, { color: colors.muted }]}>animés</Text>
-              </View>
-            </View>
-
-            {/* Public lists */}
-            <View style={styles.listsSection}>
-              <Text style={[styles.sectionTitle, { color: colors.ink }]}>Listes publiques</Text>
-              {lists.map((list, i) => (
-                <View key={i} style={[styles.listItem, { borderColor: colors.divider }]}>
-                  <Text style={[styles.listTitle, { color: colors.ink2 }]}>{list.title}</Text>
-                  <Text style={[styles.listCount, { color: colors.muted }]}>{list.count} entrées</Text>
-                </View>
-              ))}
-            </View>
-          </ScrollView>
-
-          {/* Close button */}
+      <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]}>
+        {/* Navbar */}
+        <View style={[styles.navbar, { borderBottomColor: colors.divider }]}>
+          <View style={styles.navSpacer} />
+          <Text style={[styles.navTitle, { color: colors.ink }]}>Profil</Text>
           <TouchableOpacity
             onPress={onClose}
-            style={[styles.closeButton, { borderColor: colors.cardBorder, backgroundColor: colors.chip }]}
-            activeOpacity={0.75}
+            style={[styles.closeBtn, { backgroundColor: colors.chip, borderColor: colors.cardBorder }]}
+            activeOpacity={0.7}
           >
-            <Text style={[styles.closeButtonText, { color: colors.ink2 }]}>Fermer</Text>
+            <Text style={[styles.closeBtnText, { color: colors.muted }]}>×</Text>
           </TouchableOpacity>
-        </Pressable>
-      </Pressable>
+        </View>
+
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+          {/* Avatar + name */}
+          <View style={styles.profileHeader}>
+            <Avatar initial={initial} bg={avatarBg} fg={avatarFg} size={72} />
+            <Text style={[styles.userName, { color: colors.ink }]}>{name}</Text>
+            <Text style={[styles.userMeta, { color: colors.muted2 }]}>Membre depuis 2023</Text>
+          </View>
+
+          {/* Vus */}
+          <Text style={[styles.sectionLabel, { color: colors.muted2 }]}>VUS</Text>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            {watchedRows.map((row, i, arr) => (
+              <View
+                key={row.label}
+                style={[
+                  styles.watchedRow,
+                  i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider },
+                ]}
+              >
+                <Text style={[styles.watchedLabel, { color: colors.ink }]}>{row.label}</Text>
+                <Text style={[styles.watchedCount, { color: colors.muted2 }]}>{row.count} titres</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Note moyenne */}
+          <Text style={[styles.sectionLabel, { color: colors.muted2 }]}>NOTE MOYENNE</Text>
+          <View style={[styles.card, styles.ratingCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            <Text style={[styles.avgRatingValue, { color: colors.starFill }]}>
+              {watched.avgRating.toFixed(1).replace('.', ',')}
+            </Text>
+            <StarRating value={watched.avgRating} size="md" />
+          </View>
+
+          {/* Listes publiques */}
+          {lists.length > 0 && (
+            <>
+              <Text style={[styles.sectionLabel, { color: colors.muted2 }]}>LISTES PUBLIQUES</Text>
+              <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+                {lists.map((list, i, arr) => (
+                  <TouchableOpacity
+                    key={i}
+                    activeOpacity={0.7}
+                    style={[
+                      styles.listRow,
+                      i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider },
+                    ]}
+                  >
+                    <View style={styles.listInfo}>
+                      <Text style={[styles.listTitle, { color: colors.ink }]}>{list.title}</Text>
+                      <Text style={[styles.listCount, { color: colors.muted2 }]}>{list.count} entrées</Text>
+                    </View>
+                    <ChevronIcon color={colors.muted2} size={15} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
+
+          <View style={{ height: 32 }} />
+        </ScrollView>
+      </SafeAreaView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
+  screen: { flex: 1 },
+  navbar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: 1,
   },
-  sheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    paddingTop: 12,
-    maxHeight: '85%',
+  navSpacer: { width: 38 },
+  navTitle: { fontFamily: Fonts.semiBold, fontSize: 17 },
+  closeBtn: {
+    width: 38, height: 38, borderRadius: 19, borderWidth: 1,
+    alignItems: 'center', justifyContent: 'center',
   },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 20,
-    opacity: 0.4,
+  closeBtnText: { fontSize: 22, lineHeight: 26, fontFamily: Fonts.regular },
+
+  content: { padding: 18, paddingBottom: 40 },
+
+  profileHeader: { alignItems: 'center', marginBottom: 28 },
+  userName: { fontFamily: Fonts.semiBold, fontSize: 22, marginTop: 14, marginBottom: 4 },
+  userMeta: { fontFamily: Fonts.regular, fontSize: 13 },
+
+  sectionLabel: {
+    fontFamily: Fonts.semiBold, fontSize: 11, letterSpacing: 0.8,
+    marginBottom: 8, paddingLeft: 4,
   },
-  headerSection: {
-    alignItems: 'center',
-    paddingBottom: 24,
+  card: {
+    borderRadius: 18, borderWidth: 1, marginBottom: 20,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 9 },
+    shadowOpacity: 0.45, shadowRadius: 20, elevation: 6,
   },
-  avatarGradient: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
+
+  watchedRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 15,
   },
-  avatarLetter: {
-    fontFamily: Fonts.bold,
-    fontSize: 28,
+  watchedLabel: { fontFamily: Fonts.semiBold, fontSize: 15 },
+  watchedCount: { fontFamily: Fonts.regular, fontSize: 13 },
+
+  ratingCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    paddingHorizontal: 18, paddingVertical: 18,
   },
-  userName: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 22,
-    marginBottom: 4,
+  avgRatingValue: { fontFamily: Fonts.semiBold, fontSize: 32, lineHeight: 36 },
+
+  listRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 14, gap: 12,
   },
-  memberSince: {
-    fontFamily: Fonts.regular,
-    fontSize: 13,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    borderWidth: 1,
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 24,
-  },
-  statCell: {
-    width: '50%',
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontFamily: Fonts.regular,
-    fontSize: 12,
-  },
-  listsSection: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  listItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 13,
-    borderBottomWidth: 1,
-  },
-  listTitle: {
-    fontFamily: Fonts.medium,
-    fontSize: 14,
-  },
-  listCount: {
-    fontFamily: Fonts.regular,
-    fontSize: 12,
-  },
-  closeButton: {
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  closeButtonText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 15,
-  },
+  listInfo: { flex: 1 },
+  listTitle: { fontFamily: Fonts.semiBold, fontSize: 14, lineHeight: 18 },
+  listCount: { fontFamily: Fonts.regular, fontSize: 12, marginTop: 2 },
 });

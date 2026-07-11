@@ -8,6 +8,8 @@ import { useTheme } from '../context/ThemeContext';
 import { Fonts } from '../theme';
 import { MoonIcon, SunIcon, ChevronIcon } from '../components/Icons';
 import { StarRating } from '../components/StarRating';
+import { Avatar } from '../components/Avatar';
+import { UserProfileModal } from '../components/UserProfileModal';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 
 type WatchedType = 'movie' | 'tv' | 'anime';
@@ -16,6 +18,14 @@ interface WatchedTitle {
   title: string;
   year: string;
   rating: number;
+}
+
+interface MemberInfo {
+  name: string;
+  initial: string;
+  avatarBg: string;
+  avatarFg: string;
+  isAdmin?: boolean;
 }
 
 const WATCHED_DATA: Record<WatchedType, { label: string; count: number; titles: WatchedTitle[] }> = {
@@ -56,6 +66,15 @@ const WATCHED_DATA: Record<WatchedType, { label: string; count: number; titles: 
   },
 };
 
+const CIRCLE_MEMBERS: MemberInfo[] = [
+  { name: 'Alex',    initial: 'A', avatarBg: '',        avatarFg: '',        isAdmin: true },
+  { name: 'Camille', initial: 'C', avatarBg: '#D9A8B4', avatarFg: '#6B2E3E' },
+  { name: 'Tom',     initial: 'T', avatarBg: '#A9C0CE', avatarFg: '#2E4A57' },
+  { name: 'Sofia',   initial: 'S', avatarBg: '#C7B79B', avatarFg: '#5A4A30' },
+  { name: 'Léa',     initial: 'L', avatarBg: '#E5B98A', avatarFg: '#7A3B22' },
+  { name: 'Maxime',  initial: 'M', avatarBg: '#B8C8A8', avatarFg: '#42562E' },
+];
+
 const AVERAGE_RATING = 4.1;
 
 export function ProfileScreen() {
@@ -63,8 +82,15 @@ export function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const [watchedModal, setWatchedModal] = useState<WatchedType | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<MemberInfo | null>(null);
+  const [removedMembers, setRemovedMembers] = useState<Set<string>>(new Set());
 
   const watchedData = watchedModal ? WATCHED_DATA[watchedModal] : null;
+  const visibleMembers = CIRCLE_MEMBERS.filter(m => !removedMembers.has(m.name));
+
+  const removeMember = (name: string) => {
+    setRemovedMembers(prev => new Set([...prev, name]));
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
@@ -121,6 +147,70 @@ export function ProfileScreen() {
           <StarRating value={AVERAGE_RATING} size="md" />
         </View>
 
+        {/* Membres du cercle */}
+        <Text style={[styles.sectionLabel, { color: colors.muted2 }]}>
+          MEMBRES DU CERCLE · {visibleMembers.length}
+        </Text>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+          {visibleMembers.map((member, i, arr) => (
+            <View
+              key={member.name}
+              style={[
+                styles.memberRow,
+                i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider },
+              ]}
+            >
+              {/* Tappable zone → profile */}
+              <TouchableOpacity
+                style={styles.memberInfo}
+                onPress={() => !member.isAdmin && setSelectedMember(member)}
+                activeOpacity={member.isAdmin ? 1 : 0.7}
+              >
+                {member.isAdmin ? (
+                  <LinearGradient
+                    colors={[colors.accent, colors.accentEnd]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={styles.memberAvatarGradient}
+                  >
+                    <Text style={[styles.memberAvatarInitial, { color: colors.onAccent }]}>A</Text>
+                  </LinearGradient>
+                ) : (
+                  <Avatar initial={member.initial} bg={member.avatarBg} fg={member.avatarFg} size={38} />
+                )}
+                <View style={styles.memberNameBlock}>
+                  <Text style={[styles.memberName, { color: colors.ink }]}>{member.name}</Text>
+                  {member.isAdmin && (
+                    <Text style={[styles.adminBadge, { color: colors.accent }]}>Admin</Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              {/* Remove button (non-admin only) */}
+              {!member.isAdmin && (
+                <TouchableOpacity
+                  onPress={() => removeMember(member.name)}
+                  style={[styles.removeBtn, { backgroundColor: colors.deleteRedBg, borderColor: colors.deleteRedBorder }]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.removeBtnText, { color: colors.deleteRed }]}>−</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ))}
+
+          {/* Invite row */}
+          <TouchableOpacity
+            style={[styles.inviteRow, { borderTopWidth: 1, borderTopColor: colors.divider }]}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.inviteIcon, { backgroundColor: colors.chip, borderColor: colors.chipBorder }]}>
+              <Text style={[styles.invitePlus, { color: colors.accent }]}>+</Text>
+            </View>
+            <Text style={[styles.inviteLabel, { color: colors.accent }]}>Inviter quelqu'un</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Gestion du compte */}
         <TouchableOpacity
           onPress={() => setSettingsOpen(v => !v)}
@@ -138,7 +228,6 @@ export function ProfileScreen() {
 
         {settingsOpen && (
           <View style={[styles.settingsCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-            {/* Dark mode toggle */}
             <View style={[styles.settingRow, { borderBottomColor: colors.divider, borderBottomWidth: 1 }]}>
               <View style={[styles.settingIcon, { backgroundColor: colors.chip, borderColor: colors.chipBorder }]}>
                 {isDark ? <MoonIcon color={colors.accent} size={17} /> : <SunIcon color={colors.accent} size={17} />}
@@ -156,7 +245,6 @@ export function ProfileScreen() {
             {([
               { icon: <LockIcon color={colors.accent} />, label: 'Confidentialité des listes' },
               { icon: <BellIcon color={colors.accent} />, label: 'Notifications' },
-              { icon: <CircleIcon color={colors.accent} />, label: 'Gérer mon cercle' },
               { icon: <UserIcon color={colors.accent} />, label: 'Compte' },
             ] as const).map((item, i, arr) => (
               <TouchableOpacity
@@ -184,7 +272,7 @@ export function ProfileScreen() {
         <View style={{ height: 32 }} />
       </ScrollView>
 
-      {/* Watched titles modal */}
+      {/* Watched list modal */}
       {watchedData && (
         <Modal visible={!!watchedModal} animationType="slide" statusBarTranslucent>
           <SafeAreaView style={[styles.modalScreen, { backgroundColor: colors.background }]}>
@@ -201,9 +289,7 @@ export function ProfileScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalContent}>
-              <Text style={[styles.modalCount, { color: colors.muted2 }]}>
-                {watchedData.count} titres notés
-              </Text>
+              <Text style={[styles.modalCount, { color: colors.muted2 }]}>{watchedData.count} titres notés</Text>
               {watchedData.titles.map((t, i) => (
                 <View
                   key={i}
@@ -228,6 +314,18 @@ export function ProfileScreen() {
             </ScrollView>
           </SafeAreaView>
         </Modal>
+      )}
+
+      {/* Member profile modal */}
+      {selectedMember && (
+        <UserProfileModal
+          visible={!!selectedMember}
+          name={selectedMember.name}
+          initial={selectedMember.initial}
+          avatarBg={selectedMember.avatarBg}
+          avatarFg={selectedMember.avatarFg}
+          onClose={() => setSelectedMember(null)}
+        />
       )}
     </View>
   );
@@ -256,17 +354,6 @@ function BellIcon({ color }: { color: string }) {
     <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
       <Path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke={color} strokeWidth={1.9} strokeLinecap="round" />
       <Path d="M13.7 21a2 2 0 0 1-3.4 0" stroke={color} strokeWidth={1.9} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function CircleIcon({ color }: { color: string }) {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
-      <Circle cx={9} cy={8} r={3.2} stroke={color} strokeWidth={1.9} />
-      <Path d="M3.5 19c0-3 2.5-4.6 5.5-4.6s5.5 1.6 5.5 4.6" stroke={color} strokeWidth={1.9} strokeLinecap="round" />
-      <Circle cx={17} cy={8} r={2.6} stroke={color} strokeWidth={1.9} />
-      <Path d="M16 14.5c2.6.2 4.5 1.8 4.5 4.5" stroke={color} strokeWidth={1.9} strokeLinecap="round" />
     </Svg>
   );
 }
@@ -308,8 +395,7 @@ const styles = StyleSheet.create({
     marginBottom: 8, paddingLeft: 4,
   },
   card: {
-    borderRadius: 18, borderWidth: 1,
-    marginBottom: 20,
+    borderRadius: 18, borderWidth: 1, marginBottom: 20,
     shadowColor: '#000', shadowOffset: { width: 0, height: 9 },
     shadowOpacity: 0.45, shadowRadius: 20, elevation: 6,
   },
@@ -328,26 +414,49 @@ const styles = StyleSheet.create({
   },
   avgRatingValue: { fontFamily: Fonts.semiBold, fontSize: 32, lineHeight: 36 },
 
+  memberRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 12, gap: 10,
+  },
+  memberInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  memberAvatarGradient: {
+    width: 38, height: 38, borderRadius: 19,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  memberAvatarInitial: { fontFamily: Fonts.semiBold, fontSize: 15 },
+  memberNameBlock: { flex: 1 },
+  memberName: { fontFamily: Fonts.semiBold, fontSize: 15 },
+  adminBadge: { fontFamily: Fonts.medium, fontSize: 11, marginTop: 1 },
+  removeBtn: {
+    width: 30, height: 30, borderRadius: 15, borderWidth: 1,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  removeBtnText: { fontSize: 20, lineHeight: 22, fontFamily: Fonts.regular },
+
+  inviteRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 13 },
+  inviteIcon: {
+    width: 38, height: 38, borderRadius: 19, borderWidth: 1,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  invitePlus: { fontSize: 22, lineHeight: 26, fontFamily: Fonts.regular },
+  inviteLabel: { fontFamily: Fonts.semiBold, fontSize: 15 },
+
   accountBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 13,
     borderRadius: 18, borderWidth: 1,
     paddingHorizontal: 16, paddingVertical: 14,
-    marginBottom: 0,
     shadowColor: '#000', shadowOffset: { width: 0, height: 9 },
     shadowOpacity: 0.45, shadowRadius: 20, elevation: 6,
   },
   accountBtnLabel: { flex: 1, fontFamily: Fonts.medium, fontSize: 15 },
 
   settingsCard: {
-    borderRadius: 18, borderWidth: 1,
-    marginTop: 8,
+    borderRadius: 18, borderWidth: 1, marginTop: 8,
     shadowColor: '#000', shadowOffset: { width: 0, height: 9 },
     shadowOpacity: 0.45, shadowRadius: 20, elevation: 6,
     paddingHorizontal: 16,
   },
-  settingRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 13,
-  },
+  settingRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 13 },
   settingIcon: {
     width: 34, height: 34, borderRadius: 10, borderWidth: 1,
     alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -361,7 +470,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35, shadowRadius: 3, elevation: 3,
   },
 
-  // Modal styles
+  // Watched modal
   modalScreen: { flex: 1 },
   modalNavbar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
