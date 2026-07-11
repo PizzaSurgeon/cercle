@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, SafeAreaView,
+  Animated, PanResponder,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,44 +31,41 @@ interface MemberInfo {
 
 const WATCHED_DATA: Record<WatchedType, { label: string; count: number; titles: WatchedTitle[] }> = {
   movie: {
-    label: 'Films',
-    count: 47,
+    label: 'Films', count: 47,
     titles: [
       { title: 'Dune : Deuxième Partie', year: '2024', rating: 4.7 },
-      { title: 'Past Lives', year: '2023', rating: 4.5 },
-      { title: 'Poor Things', year: '2023', rating: 4.2 },
-      { title: 'Oppenheimer', year: '2023', rating: 4.6 },
-      { title: 'Aftersun', year: '2022', rating: 4.4 },
+      { title: 'Past Lives',             year: '2023', rating: 4.5 },
+      { title: 'Poor Things',            year: '2023', rating: 4.2 },
+      { title: 'Oppenheimer',            year: '2023', rating: 4.6 },
+      { title: 'Aftersun',               year: '2022', rating: 4.4 },
       { title: 'Everything Everywhere All at Once', year: '2022', rating: 4.8 },
       { title: 'The Banshees of Inisherin', year: '2022', rating: 4.0 },
-      { title: 'Tár', year: '2022', rating: 3.8 },
+      { title: 'Tár',                    year: '2022', rating: 3.8 },
     ],
   },
   tv: {
-    label: 'Séries',
-    count: 12,
+    label: 'Séries', count: 12,
     titles: [
-      { title: 'Shōgun', year: '2024', rating: 4.3 },
-      { title: 'The Bear', year: '2024', rating: 4.0 },
+      { title: 'Shōgun',         year: '2024', rating: 4.3 },
+      { title: 'The Bear',       year: '2024', rating: 4.0 },
       { title: 'The Last of Us', year: '2023', rating: 4.4 },
-      { title: 'Succession', year: '2023', rating: 5.0 },
-      { title: 'Severance', year: '2022', rating: 4.6 },
+      { title: 'Succession',     year: '2023', rating: 5.0 },
+      { title: 'Severance',      year: '2022', rating: 4.6 },
     ],
   },
   anime: {
-    label: 'Animés',
-    count: 8,
+    label: 'Animés', count: 8,
     titles: [
       { title: 'Attack on Titan', year: '2023', rating: 4.8 },
-      { title: 'Frieren', year: '2023', rating: 4.7 },
-      { title: 'Jujutsu Kaisen', year: '2023', rating: 4.3 },
-      { title: 'Vinland Saga', year: '2022', rating: 4.5 },
+      { title: 'Frieren',         year: '2023', rating: 4.7 },
+      { title: 'Jujutsu Kaisen',  year: '2023', rating: 4.3 },
+      { title: 'Vinland Saga',    year: '2022', rating: 4.5 },
     ],
   },
 };
 
 const CIRCLE_MEMBERS: MemberInfo[] = [
-  { name: 'Alex',    initial: 'A', avatarBg: '',        avatarFg: '',        isAdmin: true },
+  { name: 'Alex',    initial: 'A', avatarBg: '', avatarFg: '', isAdmin: true },
   { name: 'Camille', initial: 'C', avatarBg: '#D9A8B4', avatarFg: '#6B2E3E' },
   { name: 'Tom',     initial: 'T', avatarBg: '#A9C0CE', avatarFg: '#2E4A57' },
   { name: 'Sofia',   initial: 'S', avatarBg: '#C7B79B', avatarFg: '#5A4A30' },
@@ -76,6 +74,131 @@ const CIRCLE_MEMBERS: MemberInfo[] = [
 ];
 
 const AVERAGE_RATING = 4.1;
+const ACTION_WIDTH = 90;
+
+// ─── Swipeable member row ────────────────────────────────────────────────────
+
+interface SwipeableRowProps {
+  member: MemberInfo;
+  isLast: boolean;
+  onViewProfile: () => void;
+  onRemove: () => void;
+}
+
+function SwipeableMemberRow({ member, isLast, onViewProfile, onRemove }: SwipeableRowProps) {
+  const { colors } = useTheme();
+  const translateX = useRef(new Animated.Value(0)).current;
+  const trackX = useRef(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const id = translateX.addListener(({ value }) => { trackX.current = value; });
+    return () => translateX.removeListener(id);
+  }, [translateX]);
+
+  const snapOpen = () =>
+    Animated.spring(translateX, { toValue: -ACTION_WIDTH, useNativeDriver: true, bounciness: 5 }).start();
+
+  const snapClose = (cb?: () => void) =>
+    Animated.spring(translateX, { toValue: 0, useNativeDriver: true, bounciness: 5 }).start(cb);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        !member.isAdmin && Math.abs(g.dx) > Math.abs(g.dy) * 1.5 && Math.abs(g.dx) > 10,
+      onPanResponderGrant: () => {
+        translateX.setOffset(trackX.current);
+        translateX.setValue(0);
+      },
+      onPanResponderMove: (_, g) => {
+        translateX.setValue(Math.max(-ACTION_WIDTH, Math.min(0, g.dx)));
+      },
+      onPanResponderRelease: () => {
+        translateX.flattenOffset();
+        if (trackX.current < -ACTION_WIDTH / 2) snapOpen();
+        else snapClose();
+      },
+    })
+  ).current;
+
+  const handleGerer = () => {
+    snapClose(() => setMenuOpen(true));
+  };
+
+  const handleViewProfile = () => {
+    setMenuOpen(false);
+    onViewProfile();
+  };
+
+  const handleRemove = () => {
+    setMenuOpen(false);
+    onRemove();
+  };
+
+  return (
+    <View style={!isLast && { borderBottomWidth: 1, borderBottomColor: colors.divider }}>
+      {/* Swipe row */}
+      <View style={{ overflow: 'hidden' }}>
+        {/* "Gérer" action revealed by swipe */}
+        {!member.isAdmin && (
+          <View style={[styles.swipeAction, { backgroundColor: colors.accent }]}>
+            <TouchableOpacity onPress={handleGerer} style={styles.swipeActionInner} activeOpacity={0.75}>
+              <Text style={[styles.swipeActionText, { color: colors.onAccent }]}>Gérer</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Main row content — slides over the action */}
+        <Animated.View
+          style={[styles.memberRow, { backgroundColor: colors.card, transform: [{ translateX }] }]}
+          {...(!member.isAdmin ? panResponder.panHandlers : {})}
+        >
+          {member.isAdmin ? (
+            <LinearGradient
+              colors={[colors.accent, colors.accentEnd]}
+              start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+              style={styles.memberAvatarGradient}
+            >
+              <Text style={[styles.memberAvatarInitial, { color: colors.onAccent }]}>A</Text>
+            </LinearGradient>
+          ) : (
+            <Avatar initial={member.initial} bg={member.avatarBg} fg={member.avatarFg} size={38} />
+          )}
+          <View style={styles.memberNameBlock}>
+            <Text style={[styles.memberName, { color: colors.ink }]}>{member.name}</Text>
+            {member.isAdmin && (
+              <Text style={[styles.adminBadge, { color: colors.accent }]}>Admin</Text>
+            )}
+          </View>
+        </Animated.View>
+      </View>
+
+      {/* Inline dropdown menu */}
+      {menuOpen && (
+        <View style={[styles.memberMenu, { backgroundColor: colors.chip, borderColor: colors.cardBorder }]}>
+          <TouchableOpacity
+            onPress={handleViewProfile}
+            style={[styles.menuItem, { borderBottomWidth: 1, borderBottomColor: colors.divider }]}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.menuItemText, { color: colors.ink }]}>Voir le profil</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleRemove}
+            style={styles.menuItem}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.menuItemText, { color: colors.deleteRed }]}>
+              Supprimer du cercle
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── Profile screen ──────────────────────────────────────────────────────────
 
 export function ProfileScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
@@ -88,10 +211,6 @@ export function ProfileScreen() {
   const watchedData = watchedModal ? WATCHED_DATA[watchedModal] : null;
   const visibleMembers = CIRCLE_MEMBERS.filter(m => !removedMembers.has(m.name));
 
-  const removeMember = (name: string) => {
-    setRemovedMembers(prev => new Set([...prev, name]));
-  };
-
   return (
     <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -101,8 +220,7 @@ export function ProfileScreen() {
         <View style={styles.profileHeader}>
           <LinearGradient
             colors={[colors.accent, colors.accentEnd]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
+            start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
             style={[styles.avatar, { shadowColor: colors.accentGlow }]}
           >
             <Text style={[styles.avatarInitial, { color: colors.onAccent }]}>A</Text>
@@ -123,10 +241,7 @@ export function ProfileScreen() {
                 key={type}
                 onPress={() => setWatchedModal(type)}
                 activeOpacity={0.7}
-                style={[
-                  styles.watchedRow,
-                  i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider },
-                ]}
+                style={[styles.watchedRow, i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider }]}
               >
                 <Text style={[styles.watchedLabel, { color: colors.ink }]}>{data.label}</Text>
                 <View style={styles.watchedRight}>
@@ -151,52 +266,15 @@ export function ProfileScreen() {
         <Text style={[styles.sectionLabel, { color: colors.muted2 }]}>
           MEMBRES DU CERCLE · {visibleMembers.length}
         </Text>
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder, overflow: 'hidden' }]}>
           {visibleMembers.map((member, i, arr) => (
-            <View
+            <SwipeableMemberRow
               key={member.name}
-              style={[
-                styles.memberRow,
-                i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.divider },
-              ]}
-            >
-              {/* Tappable zone → profile */}
-              <TouchableOpacity
-                style={styles.memberInfo}
-                onPress={() => !member.isAdmin && setSelectedMember(member)}
-                activeOpacity={member.isAdmin ? 1 : 0.7}
-              >
-                {member.isAdmin ? (
-                  <LinearGradient
-                    colors={[colors.accent, colors.accentEnd]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={styles.memberAvatarGradient}
-                  >
-                    <Text style={[styles.memberAvatarInitial, { color: colors.onAccent }]}>A</Text>
-                  </LinearGradient>
-                ) : (
-                  <Avatar initial={member.initial} bg={member.avatarBg} fg={member.avatarFg} size={38} />
-                )}
-                <View style={styles.memberNameBlock}>
-                  <Text style={[styles.memberName, { color: colors.ink }]}>{member.name}</Text>
-                  {member.isAdmin && (
-                    <Text style={[styles.adminBadge, { color: colors.accent }]}>Admin</Text>
-                  )}
-                </View>
-              </TouchableOpacity>
-
-              {/* Remove button (non-admin only) */}
-              {!member.isAdmin && (
-                <TouchableOpacity
-                  onPress={() => removeMember(member.name)}
-                  style={[styles.removeBtn, { backgroundColor: colors.deleteRedBg, borderColor: colors.deleteRedBorder }]}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.removeBtnText, { color: colors.deleteRed }]}>−</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+              member={member}
+              isLast={i === arr.length - 1}
+              onViewProfile={() => setSelectedMember(member)}
+              onRemove={() => setRemovedMembers(prev => new Set([...prev, member.name]))}
+            />
           ))}
 
           {/* Invite row */}
@@ -287,17 +365,12 @@ export function ProfileScreen() {
                 <Text style={[styles.closeBtnText, { color: colors.muted }]}>×</Text>
               </TouchableOpacity>
             </View>
-
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalContent}>
               <Text style={[styles.modalCount, { color: colors.muted2 }]}>{watchedData.count} titres notés</Text>
               {watchedData.titles.map((t, i) => (
                 <View
                   key={i}
-                  style={[
-                    styles.titleRow,
-                    { borderBottomColor: colors.divider },
-                    i < watchedData.titles.length - 1 && { borderBottomWidth: 1 },
-                  ]}
+                  style={[styles.titleRow, { borderBottomColor: colors.divider }, i < watchedData.titles.length - 1 && { borderBottomWidth: 1 }]}
                 >
                   <View style={styles.titleInfo}>
                     <Text style={[styles.titleName, { color: colors.ink }]}>{t.title}</Text>
@@ -331,6 +404,8 @@ export function ProfileScreen() {
   );
 }
 
+// ─── Icons ───────────────────────────────────────────────────────────────────
+
 function GearIcon({ color }: { color: string }) {
   return (
     <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
@@ -339,7 +414,6 @@ function GearIcon({ color }: { color: string }) {
     </Svg>
   );
 }
-
 function LockIcon({ color }: { color: string }) {
   return (
     <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
@@ -348,7 +422,6 @@ function LockIcon({ color }: { color: string }) {
     </Svg>
   );
 }
-
 function BellIcon({ color }: { color: string }) {
   return (
     <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
@@ -357,7 +430,6 @@ function BellIcon({ color }: { color: string }) {
     </Svg>
   );
 }
-
 function UserIcon({ color }: { color: string }) {
   return (
     <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
@@ -366,7 +438,6 @@ function UserIcon({ color }: { color: string }) {
     </Svg>
   );
 }
-
 function LogoutIcon({ color }: { color: string }) {
   return (
     <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
@@ -375,6 +446,8 @@ function LogoutIcon({ color }: { color: string }) {
     </Svg>
   );
 }
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
@@ -390,10 +463,7 @@ const styles = StyleSheet.create({
   userName: { fontFamily: Fonts.semiBold, fontSize: 19 },
   userMeta: { fontFamily: Fonts.regular, fontSize: 12.5, marginTop: 2 },
 
-  sectionLabel: {
-    fontFamily: Fonts.semiBold, fontSize: 11, letterSpacing: 0.8,
-    marginBottom: 8, paddingLeft: 4,
-  },
+  sectionLabel: { fontFamily: Fonts.semiBold, fontSize: 11, letterSpacing: 0.8, marginBottom: 8, paddingLeft: 4 },
   card: {
     borderRadius: 18, borderWidth: 1, marginBottom: 20,
     shadowColor: '#000', shadowOffset: { width: 0, height: 9 },
@@ -408,17 +478,20 @@ const styles = StyleSheet.create({
   watchedRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   watchedCount: { fontFamily: Fonts.regular, fontSize: 13 },
 
-  ratingCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    paddingHorizontal: 18, paddingVertical: 18,
-  },
+  ratingCard: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 18, paddingVertical: 18 },
   avgRatingValue: { fontFamily: Fonts.semiBold, fontSize: 32, lineHeight: 36 },
 
-  memberRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 12, gap: 10,
+  // Swipeable member row
+  swipeAction: {
+    position: 'absolute', right: 0, top: 0, bottom: 0, width: ACTION_WIDTH,
+    justifyContent: 'center', alignItems: 'center',
   },
-  memberInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  swipeActionInner: { flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' },
+  swipeActionText: { fontFamily: Fonts.semiBold, fontSize: 13 },
+  memberRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 16, paddingVertical: 13,
+  },
   memberAvatarGradient: {
     width: 38, height: 38, borderRadius: 19,
     alignItems: 'center', justifyContent: 'center',
@@ -427,11 +500,12 @@ const styles = StyleSheet.create({
   memberNameBlock: { flex: 1 },
   memberName: { fontFamily: Fonts.semiBold, fontSize: 15 },
   adminBadge: { fontFamily: Fonts.medium, fontSize: 11, marginTop: 1 },
-  removeBtn: {
-    width: 30, height: 30, borderRadius: 15, borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
+
+  memberMenu: {
+    marginHorizontal: 16, marginBottom: 10, borderRadius: 12, borderWidth: 1, overflow: 'hidden',
   },
-  removeBtnText: { fontSize: 20, lineHeight: 22, fontFamily: Fonts.regular },
+  menuItem: { paddingVertical: 13, paddingHorizontal: 16 },
+  menuItemText: { fontFamily: Fonts.medium, fontSize: 14 },
 
   inviteRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 13 },
   inviteIcon: {
@@ -443,18 +517,16 @@ const styles = StyleSheet.create({
 
   accountBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 13,
-    borderRadius: 18, borderWidth: 1,
-    paddingHorizontal: 16, paddingVertical: 14,
+    borderRadius: 18, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 14,
     shadowColor: '#000', shadowOffset: { width: 0, height: 9 },
     shadowOpacity: 0.45, shadowRadius: 20, elevation: 6,
   },
   accountBtnLabel: { flex: 1, fontFamily: Fonts.medium, fontSize: 15 },
 
   settingsCard: {
-    borderRadius: 18, borderWidth: 1, marginTop: 8,
+    borderRadius: 18, borderWidth: 1, marginTop: 8, paddingHorizontal: 16,
     shadowColor: '#000', shadowOffset: { width: 0, height: 9 },
     shadowOpacity: 0.45, shadowRadius: 20, elevation: 6,
-    paddingHorizontal: 16,
   },
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 13 },
   settingIcon: {
@@ -464,10 +536,8 @@ const styles = StyleSheet.create({
   settingLabel: { flex: 1, fontFamily: Fonts.medium, fontSize: 15 },
   toggle: { width: 46, height: 27, borderRadius: 999 },
   toggleKnob: {
-    position: 'absolute', top: 3, width: 21, height: 21, borderRadius: 10.5,
-    backgroundColor: '#fff',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.35, shadowRadius: 3, elevation: 3,
+    position: 'absolute', top: 3, width: 21, height: 21, borderRadius: 10.5, backgroundColor: '#fff',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.35, shadowRadius: 3, elevation: 3,
   },
 
   // Watched modal
@@ -478,10 +548,7 @@ const styles = StyleSheet.create({
   },
   navSpacer: { width: 38 },
   modalNavTitle: { fontFamily: Fonts.semiBold, fontSize: 17 },
-  closeBtn: {
-    width: 38, height: 38, borderRadius: 19, borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  closeBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   closeBtnText: { fontSize: 22, lineHeight: 26, fontFamily: Fonts.regular },
   modalContent: { padding: 18, paddingBottom: 40 },
   modalCount: { fontFamily: Fonts.regular, fontSize: 13, marginBottom: 16 },
