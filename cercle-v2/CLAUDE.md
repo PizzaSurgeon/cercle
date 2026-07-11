@@ -8,7 +8,7 @@
 ## Projet
 
 **Nom :** Cercle (slug EAS : `cercle-v2`)
-**Type :** Application mobile React Native / Expo — notation de films entre amis
+**Type :** Application mobile React Native / Expo — notation de films/séries/animés entre amis
 **Repo :** https://github.com/PizzaSurgeon/cercle
 **Branche principale :** `master`
 **Expo Dashboard :** https://expo.dev/accounts/pizzasurgeon/projects/cercle-v2
@@ -21,17 +21,29 @@
 - **Langage :** TypeScript ~5.5.0
 - **Bundler :** Metro (via Expo)
 - **Fonts :** `@expo-google-fonts/sora` (400Regular, 500Medium, 600SemiBold, 700Bold)
-- **Navigation :** Tab bar custom (`src/components/BottomTabBar.tsx`) — 4 onglets : Fil / Liste / + / Profil
+- **Navigation :** Tab bar custom (`src/components/BottomTabBar.tsx`) — 5 boutons : AMIS (non cliquable) · CERCLE · + · LISTE · PROFIL
 - **Thème :** Dark/light via React Context (`src/context/ThemeContext.tsx`)
 - **Entrée de l'app :** `index.ts` → `App.tsx`
+- **Données films :** TMDB API v3, clé dans `src/config.ts`, service dans `src/services/tmdb.ts`
 
 ---
 
 ## Infrastructure de déploiement
 
-### EAS (Expo Application Services)
+### Workflow actuel (développement)
+Le déploiement EAS Update est **automatique via GitHub Actions** à chaque push sur `master`.
+Le fichier workflow est à la **racine du repo** : `.github/workflows/eas-update.yml` (pas dans cercle-v2/).
 
-Tout est configuré et opérationnel :
+**Attention :** EAS Update ne fonctionne qu'avec un Development Build ou une vraie app compilée.
+Avec **Expo Go**, les OTA ne s'appliquent pas. Pour tester les modifs, faire :
+```bash
+git pull
+npm install --legacy-peer-deps
+npx expo start
+```
+Scanner le QR code dans Expo Go → code le plus récent servi en direct.
+
+### EAS (Expo Application Services)
 
 | Élément | Valeur |
 |---|---|
@@ -41,65 +53,60 @@ Tout est configuré et opérationnel :
 | `runtimeVersion` | `{ "policy": "appVersion" }` |
 | Branch EAS active | `main` |
 
-### Ce que fait le hook OTA dans App.tsx
-
-Au démarrage, `expo-updates` vérifie silencieusement si une mise à jour est disponible sur la branche `main`. Si oui, elle est téléchargée et l'app se recharge automatiquement. En développement local (`expo start`), ce hook est inactif.
-
----
-
-## Workflow de déploiement
-
-### Après chaque modification de code :
-
+### Git — push depuis le container Claude Code
 ```bash
-# 1. Commiter et pusher sur GitHub
-git add -A
-git commit -m "description"
-git push
-
-# 2. Publier la mise à jour OTA
-eas update --branch main --message "description"
+git add <fichiers>
+git commit -m "message"
+git push https://TOKEN@github.com/PizzaSurgeon/cercle.git main:master
 ```
+Le GITHUB_TOKEN est dans `cercle-v2/.claude/settings.local.json` (gitignored).
 
-### Sur le téléphone :
-- Fermer complètement l'app Expo Go
-- Rouvrir → mise à jour appliquée automatiquement
-
-### Limitations OTA
-Un **rebuild natif** (`eas build`) est nécessaire uniquement si :
-- Ajout d'une lib avec du code natif
-- Modification des permissions Android/iOS
-- Changement de la `version` dans `app.json`
+### Prochaine étape déploiement
+Faire un **`eas build`** (1 build/mois gratuit) pour générer une vraie app iOS/Android.
+Nécessite un compte Apple Developer ($99/an) pour iOS.
+Une fois le build installé, les GitHub Actions OTA fonctionneront automatiquement.
 
 ---
 
 ## Structure du projet
 
 ```
-cercle-v2/
-├── assets/
-├── src/
-│   ├── components/
-│   │   ├── Avatar.tsx
-│   │   ├── BottomTabBar.tsx       # 4 onglets : fil / liste / + / profil
-│   │   ├── ConsensusCard.tsx      # Carte principale du feed (avec progress optionnel)
-│   │   ├── Icons.tsx              # Tous les SVG icons
-│   │   ├── PosterPlaceholder.tsx  # Miniature poster coloré
-│   │   ├── RecommendationCard.tsx
-│   │   └── StarRating.tsx
-│   ├── context/
-│   │   └── ThemeContext.tsx       # Dark/light theme provider
-│   ├── screens/
-│   │   ├── FeedScreen.tsx         # Onglet Fil
-│   │   ├── WatchlistScreen.tsx    # Onglet Liste
-│   │   └── ProfileScreen.tsx      # Onglet Profil
-│   └── theme.ts                   # Couleurs dark/light + constantes Fonts
-├── App.tsx                        # Entry point, fonts Sora, hook OTA
-├── app.json                       # Config Expo + EAS
-├── eas.json                       # Config EAS Build
-├── index.ts
-├── package.json
-└── tsconfig.json
+repo/
+├── .github/workflows/eas-update.yml   ← workflow CI/CD (racine du repo, pas dans cercle-v2/)
+└── cercle-v2/
+    ├── assets/
+    ├── src/
+    │   ├── components/
+    │   │   ├── Avatar.tsx                  # Cercle coloré avec initiale
+    │   │   ├── BottomTabBar.tsx            # Tab bar custom 5 boutons
+    │   │   ├── ConsensusCard.tsx           # Carte feed (poster + note cercle + avis)
+    │   │   ├── FilmDetailModal.tsx         # Modal détail film (slide-up plein écran)
+    │   │   │                               # → gère RatingModal et UserProfileModal en interne
+    │   │   ├── Icons.tsx                   # SVG icons (AmisIcon, CercleIcon, etc.)
+    │   │   ├── MediaPoster.tsx             # Image TMDB avec fallback PosterPlaceholder
+    │   │   ├── PosterPlaceholder.tsx       # Miniature poster coloré (fallback)
+    │   │   ├── RatingModal.tsx             # Bottom sheet notation (avis + plateforme + cercle)
+    │   │   ├── RecommendationCard.tsx      # Carte "Recommandé pour toi" (cliquable)
+    │   │   ├── SearchModal.tsx             # Modal recherche TMDB (bouton +)
+    │   │   ├── StarRating.tsx              # Étoiles lecture seule (rendu étoile par étoile)
+    │   │   └── UserProfileModal.tsx        # Modal profil ami (stats + listes)
+    │   ├── context/
+    │   │   └── ThemeContext.tsx            # Dark/light theme provider
+    │   ├── screens/
+    │   │   ├── FeedScreen.tsx              # Onglet CERCLE (feed + filtres + modals)
+    │   │   ├── WatchlistScreen.tsx         # Onglet LISTE (À voir / Vus / Recommandés)
+    │   │   └── ProfileScreen.tsx           # Onglet PROFIL (stats + settings)
+    │   ├── services/
+    │   │   └── tmdb.ts                     # Fonctions TMDB : search, getMediaDetails, getPosterUrl…
+    │   ├── types/
+    │   │   └── media.ts                    # Types TypeScript : MediaItem, TMDBSearchResult…
+    │   └── theme.ts                        # Couleurs dark/light + constantes Fonts
+    ├── App.tsx                             # Entry point, fonts Sora, hook OTA, SearchModal
+    ├── app.json                            # Config Expo + EAS
+    ├── config.ts                           # Clé API TMDB
+    ├── eas.json
+    ├── index.ts
+    └── package.json
 ```
 
 ---
@@ -108,29 +115,140 @@ cercle-v2/
 
 - **Dark** : background `#0B0D11`, accent `#F2B441` (or), ink `#F5F2EA`
 - **Light** : background `#E2D0BB` (crème), accent `#C8603C` (terracotta), ink `#3A2A20`
-- Toggle dans le header du Fil et dans l'écran Profil
+- Toggle dans le header du feed (CERCLE) et dans l'écran Profil
+
+---
+
+## Architecture des modals (important)
+
+Les modals s'empilent dans leur propre contexte pour éviter les problèmes de stacking iOS :
+
+- **FeedScreen** → rend `FilmDetailModal` + `UserProfileModal` (pour les cartes du feed)
+- **FilmDetailModal** → gère `RatingModal` et `UserProfileModal` en interne (reviewers dans le détail)
+- **WatchlistScreen** → rend son propre `FilmDetailModal`
+- **App.tsx** → rend `SearchModal` + `RatingModal` (pour la recherche via bouton +)
+- **UserProfileModal** : `animationType="slide"` sans `transparent` → fond opaque (couleur du thème)
+
+---
+
+## TMDB API
+
+- **Clé API :** dans `src/config.ts` → `TMDB_API_KEY`
+- **Langue :** `fr-FR` par défaut
+- **Fournisseurs watch :** région `FR`
+- **IDs utilisés dans les mocks :**
+  - Shōgun : TV 126308
+  - Dune 2 : Movie 693134
+  - Attack on Titan : TV 1429
+  - Past Lives : Movie 877269
+  - Frieren : TV 209867
+  - Poor Things : Movie 792307
+  - The Bear : TV 136315
+  - Jujutsu Kaisen : TV 95479
+  - Oppenheimer : Movie 872585
+  - The Last of Us : TV 100088
+
+---
+
+## Données mock (temporaires)
+
+Tout le contenu actuel (Shōgun, Dune, AOT, profils Camille/Tom/Sofia/Léa/Maxime) est du **mock data** pour le développement. Il sera remplacé par de vraies données quand le backend sera en place.
+
+**Membres du cercle mock** (couleurs d'avatar réutilisées partout) :
+| Nom | Initial | bg | fg |
+|---|---|---|---|
+| Camille | C | #D9A8B4 | #6B2E3E |
+| Tom | T | #A9C0CE | #2E4A57 |
+| Sofia | S | #C7B79B | #5A4A30 |
+| Léa | L | #E5B98A | #7A3B22 |
+| Maxime | M | #B8C8A8 | #42562E |
+
+---
+
+## Fonctionnalités implémentées
+
+### Onglet CERCLE (feed)
+- Feed filtrable : Tout / Films / Séries / Animés
+- Cartes ConsensusCard avec poster TMDB réel, note moyenne, avis du cercle
+- Carte "Recommandé pour toi" (Past Lives) avec poster TMDB, cliquable
+- Clic sur carte → FilmDetailModal (poster, synopsis, durée, plateforme, avis, bouton noter)
+- Clic sur reviewer → UserProfileModal (stats + listes publiques)
+- Bouton "Noter ce titre" → RatingModal (avis texte + plateforme + sélection membres cercle)
+
+### Onglet LISTE
+- 3 sections : À voir / Vus & notés / Recommandé par ton cercle
+- Posters TMDB réels pour tous les titres
+- Chaque titre cliquable → FilmDetailModal avec avis du cercle si disponibles
+- Shōgun, Dune 2, Past Lives, AOT ont leurs vraies reviews mock
+
+### Onglet PROFIL
+- Stats personnelles (mock), distribution des notes, formats
+- Toggle thème dark/light
+
+### Bouton + (SearchModal)
+- Recherche TMDB avec debounce 400ms
+- Résultats avec poster, année, badge Film/Série/Animé, synopsis tronqué
+- Clic sur résultat → RatingModal
+- Clavier dark/light selon le thème
+
+### RatingModal
+- Champ texte avis (140 car.)
+- Chips plateforme de visionnage
+- Grille membres du cercle avec avatars (sélection multiple) + bouton "Tout le cercle"
+- Les étoiles ont été supprimées (à remplacer par un autre système)
 
 ---
 
 ## Conventions importantes
 
-- **Ne pas changer la `version` dans `app.json`** sans raison — cela invalide la `runtimeVersion` et force un rebuild natif
-- **Branch EAS = `main`** (pas `master`) — le push Git est sur `master`, les updates EAS publient sur `main`
-- Les `LF/CRLF warnings` de Git sur Windows sont normaux et non bloquants
-- `npm install --legacy-peer-deps` requis (conflit peer deps @types/react v19)
+- **Ne pas changer la `version` dans `app.json`** → invalide la runtimeVersion, force un rebuild
+- **Branch EAS = `main`** (push Git sur `master`, EAS publie sur `main`)
+- **`npm install --legacy-peer-deps`** requis (conflit peer deps @types/react v19)
+- **LF/CRLF warnings** Git sur Windows → normaux, non bloquants
+- **`useSafeAreaInsets()`** appliqué sur tous les écrans pour l'encoche iPhone
+- **StarRating** : rendu étoile par étoile avec `lineHeight` explicite (évite le clipping)
+- **Pas de `transparent` sur UserProfileModal** → problème de backdrop en mode nuit sur iOS
+
+---
+
+## Backend (à venir)
+
+**Décisions prises :**
+- **Auth + DB :** Supabase (plan gratuit pour démarrer, $23/mois en Pro)
+- **Métadonnées films :** TMDB reste en read-only (poster, synopsis, durée, plateformes)
+- **Hébergement API custom si besoin :** VPS Hostinger ou similaire (indépendant d'EAS)
+
+**Ce qu'il faudra construire :**
+- Authentification utilisateurs (email/password via Supabase Auth)
+- Tables : users, ratings, watchlists, circles, friendships
+- Remplacer le mock data par des appels API réels
 
 ---
 
 ## Historique des sessions
 
 ### Session 1 — 17/06/2026 (claude.ai)
-- Setup complet EAS CLI, EAS Update, EAS Build
-- Création `eas.json`, mise à jour `app.json` avec projectId et config updates
-- Installation `expo-updates`, ajout hook OTA dans `App.tsx`
-- Premier `eas update` réussi (Update group ID : `1c67152b-1294-4a90-866b-19f237d53bff`)
+- Setup EAS CLI, EAS Update, EAS Build
+- Création `eas.json`, `app.json` avec projectId, hook OTA dans `App.tsx`
 
 ### Session 2 — 17/06/2026 (Claude Code)
-- Refonte complète UI depuis Claude Design : thème sombre/clair, police Sora
-- 3 écrans fonctionnels : Fil (feed + filtres), Liste (watchlist), Profil (stats + settings)
-- Navigation bottom tab custom (4 onglets)
-- Merge config EAS dans la nouvelle UI
+- Refonte UI complète : thème dark/light, police Sora, 3 écrans
+
+### Session 3 — 18-19/06/2026 (Claude Code)
+- GitHub Actions pour EAS Update automatique
+- Tab bar : AMIS · CERCLE · + · LISTE · PROFIL
+- Fix clipping note ConsensusCard
+- Modals : FilmDetailModal, UserProfileModal, RatingModal
+- Reviewers cliquables dans les cartes
+
+### Session 4 — 11/07/2026 (Claude Code)
+- Intégration TMDB : service complet, types, config
+- MediaPoster avec fallback, posters réels dans le feed et la liste
+- SearchModal sur bouton + avec debounce
+- Suppression barre de progression (AOT)
+- Fix stacking modals iOS (RatingModal et UserProfileModal gérés en interne)
+- Safe area insets sur tous les écrans
+- UserProfileModal : fond opaque, plus de transparence
+- WatchlistScreen : titres cliquables + reviews mock par titre
+- RatingModal : grille membres cercle avec sélection multiple, étoiles supprimées
+- Clavier SearchModal dark/light selon thème
